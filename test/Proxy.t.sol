@@ -51,8 +51,14 @@ contract ProxyTest is PoolTestBase {
         uint256 supply = lp.totalSupply();
         uint16 fee = pool.swapFeeBps();
 
+        // Deploy the upgrade target BEFORE pranking. vm.prank affects only the
+        // very next call; if `new PoolV2Mock()` is inlined as an argument it
+        // consumes the prank via its CREATE, and upgradeToAndCall then runs as
+        // the test contract → OwnableUnauthorizedAccount. (See test_Upgrade_OnlyOwner,
+        // which hoists for the same reason.)
+        PoolV2Mock v2 = new PoolV2Mock();
         vm.prank(owner);
-        pool.upgradeToAndCall(address(new PoolV2Mock()), "");
+        pool.upgradeToAndCall(address(v2), "");
 
         assertEq(PoolV2Mock(address(pool)).version(), "v2", "new logic live");
         assertEq(pool.reserve0(), r0, "reserve0 survived");

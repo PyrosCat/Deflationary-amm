@@ -22,6 +22,7 @@ contract DeflationaryTokenTest is Test {
 
     function test_NoController_NoTax() public {
         DeflationaryToken t = _newToken(address(0));
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
         assertEq(t.balanceOf(bob), 100e18);
         assertEq(t.totalSupply(), SUPPLY);
@@ -31,6 +32,7 @@ contract DeflationaryTokenTest is Test {
         FlatRateBurnController c = new FlatRateBurnController(200); // 2%
         DeflationaryToken t = _newToken(address(c));
 
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
 
         assertEq(t.balanceOf(bob), 98e18, "recipient gets amount minus tax");
@@ -43,6 +45,7 @@ contract DeflationaryTokenTest is Test {
         c.setExempt(address(this), true);
         DeflationaryToken t = _newToken(address(c));
 
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
         assertEq(t.balanceOf(bob), 100e18, "exempt sender pays no tax");
     }
@@ -50,6 +53,7 @@ contract DeflationaryTokenTest is Test {
     function test_MaliciousController_ClampedToHardCap() public {
         DeflationaryToken t = _newToken(address(new MaxTaxController()));
 
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
 
         uint256 maxTax = (100e18 * t.MAX_BURN_BPS()) / t.BPS(); // 10e18
@@ -58,12 +62,14 @@ contract DeflationaryTokenTest is Test {
 
     function test_RevertingController_FailsOpen() public {
         DeflationaryToken t = _newToken(address(new RevertingController()));
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
         assertEq(t.balanceOf(bob), 100e18, "broken controller cannot freeze or tax transfers");
     }
 
     function test_GasBombController_ContainedByGasCap() public {
         DeflationaryToken t = _newToken(address(new GasBombController()));
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, 100e18);
         assertEq(t.balanceOf(bob), 100e18, "gas-hungry controller contained; zero tax");
     }
@@ -82,6 +88,7 @@ contract DeflationaryTokenTest is Test {
         amount = bound(amount, 1, SUPPLY);
         DeflationaryToken t = _newToken(address(new MaxTaxController()));
 
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(bob, amount);
 
         uint256 maxTax = (amount * t.MAX_BURN_BPS()) / t.BPS();
@@ -158,6 +165,7 @@ contract DeflationaryTokenTest is Test {
     function test_Permit_ApprovesWithoutTransaction() public {
         DeflationaryToken t = _newToken(address(0));
         (address user, uint256 pk) = makeAddrAndKey("permitUser");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transfer(user, 100e18);
 
         uint256 deadline = block.timestamp + 1 days;
@@ -172,6 +180,7 @@ contract DeflationaryTokenTest is Test {
         assertEq(t.allowance(user, bob), 60e18);
 
         vm.prank(bob);
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         t.transferFrom(user, bob, 60e18);
         assertEq(t.balanceOf(bob), 60e18);
     }

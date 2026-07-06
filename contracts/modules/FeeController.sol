@@ -35,6 +35,8 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
         uint16 cap = _maxFor(feeType);
         if (newBps > cap) revert FeeAboveCap(newBps, cap);
 
+        // casting to 'uint64' is safe: block.timestamp + 1 day < 2**64 until year ~584e9
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint64 executeAfter = uint64(block.timestamp + FEE_UPDATE_DELAY);
         pendingFees[uint8(feeType)] = PendingFee(newBps, executeAfter, true);
         emit FeeUpdateScheduled(feeType, newBps, executeAfter);
@@ -49,6 +51,8 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
     function executeFeeUpdate(FeeType feeType) external onlyOwner {
         PendingFee memory p = pendingFees[uint8(feeType)];
         if (!p.exists) revert NoPendingUpdate();
+        // Second-level timestamp manipulation is immaterial against a 1-day timelock.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
 
         if (feeType == FeeType.DepositBurn) depositBurnBps = p.newBps;
@@ -64,6 +68,8 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
     function scheduleSplitUpdate(uint16 lpShare, uint16 burnShare, uint16 protocolShare) external onlyOwner {
         if (uint256(lpShare) + burnShare + protocolShare != BPS_DENOMINATOR) revert SplitMustSumTo100();
 
+        // casting to 'uint64' is safe: block.timestamp + 1 day < 2**64 until year ~584e9
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint64 executeAfter = uint64(block.timestamp + FEE_UPDATE_DELAY);
         pendingSplit = PendingSplit(lpShare, burnShare, protocolShare, executeAfter, true);
         emit SplitUpdateScheduled(lpShare, burnShare, protocolShare, executeAfter);
@@ -78,6 +84,8 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
     function executeSplitUpdate() external onlyOwner {
         PendingSplit memory p = pendingSplit;
         if (!p.exists) revert NoPendingUpdate();
+        // Second-level timestamp manipulation is immaterial against a 1-day timelock.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
 
         swapFeeLpShareBps = p.lpShare;

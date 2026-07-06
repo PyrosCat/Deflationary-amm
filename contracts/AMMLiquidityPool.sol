@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -84,6 +85,9 @@ contract AMMLiquidityPool is
     event ReservesSynced(uint256 reserve0, uint256 reserve1);
 
     modifier ensure(uint256 deadline) {
+        // User-chosen tx deadline (Uniswap V2 pattern); second-level validator
+        // drift only shifts expiry by seconds and cannot advantage anyone.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > deadline) revert Expired();
         _;
     }
@@ -129,6 +133,30 @@ contract AMMLiquidityPool is
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    // ─── Ownership (diamond resolution) ─────────────────────────────────
+
+    /// @dev Both Ownable2StepUpgradeable (inherited directly) and
+    ///      OwnableUpgradeable (inherited via the modules) define these two
+    ///      functions, so Solidity requires the most-derived contract to
+    ///      disambiguate. Both resolve to the TWO-STEP behavior: transfers
+    ///      set a pending owner and take effect only on acceptOwnership().
+    function transferOwnership(address newOwner)
+        public
+        virtual
+        override(OwnableUpgradeable, Ownable2StepUpgradeable)
+        onlyOwner
+    {
+        Ownable2StepUpgradeable.transferOwnership(newOwner);
+    }
+
+    function _transferOwnership(address newOwner)
+        internal
+        virtual
+        override(OwnableUpgradeable, Ownable2StepUpgradeable)
+    {
+        Ownable2StepUpgradeable._transferOwnership(newOwner);
+    }
 
     // ─── Liquidity ──────────────────────────────────────────────────────
 
@@ -352,7 +380,14 @@ contract AMMLiquidityPool is
             r0 < MAX_ORACLE_RESERVE && r1 < MAX_ORACLE_RESERVE
         ) {
             unchecked {
+                // Divide-before-multiply is DELIBERATE (Uniswap V2 UQ112 form):
+                // (r * Q112) / r' stays within 256 bits for reserves below
+                // MAX_ORACLE_RESERVE; multiplying by timeElapsed first would
+                // reintroduce the overflow this guard exists to prevent. The
+                // sub-Q112 precision loss is bounded and inherent to the format.
+                // forge-lint: disable-next-line(divide-before-multiply)
                 price0CumulativeLast += ((r1 * Q112) / r0) * timeElapsed; // wraps by design
+                // forge-lint: disable-next-line(divide-before-multiply)
                 price1CumulativeLast += ((r0 * Q112) / r1) * timeElapsed; // wraps by design
             }
         }

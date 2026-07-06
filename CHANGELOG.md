@@ -60,4 +60,4 @@ Do not deploy to mainnet.
 - Professional audit
 - Ownership to multisig
 
-[v0.1.0-alpha.1]: https://github.com/your-username/deflationary-amm/releases/tag/v0.1.0-alpha.1
+[v0.1.0-alpha.1]: https://github.com/PyrosCat/Deflationary-amm/releases/tag/v0.1.0-alpha.1

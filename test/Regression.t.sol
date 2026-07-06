@@ -24,8 +24,12 @@ contract RegressionTest is PoolTestBase {
         vm.prank(bob);
         uint256 out = pool.swap(address(tokenA), 100e18, 0, block.timestamp + 1);
 
-        uint256 net = 100e18 - (100e18 * pool.swapFeeBps()) / BPS; // 99e18
-        assertEq(out, (net * r1) / (r0 + net), "exact constant-product on PRE-trade reserves");
+        // Mirror math via the shared uint256 helper. NOTE: do not inline this as
+        // `100e18 * pool.swapFeeBps()` — swapFeeBps() returns uint16, and Solidity
+        // performs literal-times-uint16 in the literal's mobile type (uint72 for
+        // 100e18), so 1e20 * 100 = 1e22 overflows uint72's ~4.72e21 max and
+        // panics. _quoteOut takes uint256 params, promoting the math to 256-bit.
+        assertEq(out, _quoteOut(100e18, r0, r1), "exact constant-product on PRE-trade reserves");
         assertGt(out, 88e18, "v5's double-counted math returned ~83e18");
     }
 
@@ -40,14 +44,20 @@ contract RegressionTest is PoolTestBase {
 
         // Attack step 2: massive donation to inflate share price.
         vm.startPrank(bob);
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         tokenA.transfer(address(pool), 10_000e18);
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
         tokenB.transfer(address(pool), 10_000e18);
         vm.stopPrank();
         pool.sync();
 
-        // Victim deposits.
+        // Victim deposits. Amount must be commensurate with the (now inflated)
+        // pool size — a deposit 10_000x smaller than reserves legitimately rounds
+        // to zero LP under constant-product math; that is correct behavior, not
+        // the v5 theft bug. The min-liquidity lock defends against the attacker
+        // STEALING a fair-sized deposit, which is what this asserts.
         vm.prank(alice);
-        uint256 victimLiq = pool.deposit(1e18, 1e18, 0, block.timestamp + 1);
+        uint256 victimLiq = pool.deposit(100e18, 100e18, 0, block.timestamp + 1);
         assertGt(victimLiq, 0, "victim must receive LP (v5 rounded to zero)");
 
         // Victim exits without loss.

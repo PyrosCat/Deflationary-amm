@@ -33,7 +33,7 @@ jobs:
         run: forge test -vvv
 
       - name: Coverage
-        run: forge coverage --report summary
+        run: forge coverage --report summary --ir-minimum
 
   invariant:
     name: invariant (deep run)

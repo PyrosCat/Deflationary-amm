@@ -164,8 +164,11 @@ contract PoolTest is PoolTestBase {
 
     function test_Swap_ExpiredDeadlineReverts() public {
         _seed(1000e18, 1000e18);
-        uint256 deadline = block.timestamp;
         vm.warp(block.timestamp + 10);
+        // Deadline strictly in the past. The guard is `block.timestamp > deadline`
+        // (strict), so deadline == block.timestamp is still VALID (Uniswap
+        // convention); it must be at least one second behind to be Expired.
+        uint256 deadline = block.timestamp - 1;
 
         vm.prank(bob);
         vm.expectRevert(AMMLiquidityPool.Expired.selector);
@@ -190,7 +193,9 @@ contract PoolTest is PoolTestBase {
         vm.warp(block.timestamp + 100);
         pool.sync();
 
+        // forge-lint: disable-next-line(divide-before-multiply)
         assertEq(pool.price0CumulativeLast(), ((r1 * Q112) / r0) * 100, "price0 accumulated");
+        // forge-lint: disable-next-line(divide-before-multiply)
         assertEq(pool.price1CumulativeLast(), ((r0 * Q112) / r1) * 100, "price1 accumulated");
     }
 
@@ -215,6 +220,7 @@ contract PoolTest is PoolTestBase {
 
         assertEq(
             pool.price0CumulativeLast(),
+            // forge-lint: disable-next-line(divide-before-multiply)
             ((r1 * Q112) / r0) * 50,
             "accumulation weighted by the PRE-swap price"
         );

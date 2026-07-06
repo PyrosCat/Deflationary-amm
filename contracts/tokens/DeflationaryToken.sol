@@ -95,6 +95,8 @@ contract DeflationaryToken is ERC20, ERC20Burnable, ERC20Permit, Ownable2Step {
         if (newController != address(0) && newController.code.length == 0) {
             revert ControllerNotContract();
         }
+        // casting to 'uint64' is safe: block.timestamp + 1 day < 2**64 until year ~584e9
+        // forge-lint: disable-next-line(unsafe-typecast)
         uint64 executeAfter = uint64(block.timestamp + CONTROLLER_UPDATE_DELAY);
         pendingController = PendingController(newController, executeAfter, true);
         emit ControllerUpdateScheduled(newController, executeAfter);
@@ -109,6 +111,8 @@ contract DeflationaryToken is ERC20, ERC20Burnable, ERC20Permit, Ownable2Step {
     function executeControllerUpdate() external onlyOwner {
         PendingController memory p = pendingController;
         if (!p.exists) revert NoPendingUpdate();
+        // Second-level timestamp manipulation is immaterial against a 1-day timelock.
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
 
         burnController = IBurnController(p.newController);
