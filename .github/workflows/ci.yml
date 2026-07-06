@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  FOUNDRY_PROFILE: default
+
+jobs:
+  test:
+    name: build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Show versions
+        run: forge --version
+
+      - name: Format check
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build --sizes
+
+      - name: Test
+        run: forge test -vvv
+
+      - name: Coverage
+        run: forge coverage --report summary
+
+  invariant:
+    name: invariant (deep run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Deep invariant run
+        run: forge test --match-contract PoolInvariants -vvv
+        env:
+          FOUNDRY_INVARIANT_RUNS: "256"
+          FOUNDRY_INVARIANT_DEPTH: "64"
+
+  storage-layout:
+    name: storage layout diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Capture layout
+        run: |
+          forge build
+          forge inspect AMMLiquidityPool storage-layout > /tmp/layout-new.json
+      - name: Compare against main
+        run: |
+          git fetch origin main
+          git stash
+          forge build
+          forge inspect AMMLiquidityPool storage-layout > /tmp/layout-old.json
+          git stash pop
+          diff /tmp/layout-old.json /tmp/layout-new.json && echo "Layout unchanged" || \
+            (echo "STORAGE LAYOUT CHANGED — review carefully before merging" && exit 1)
+        continue-on-error: true

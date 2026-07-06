@@ -1,0 +1,27 @@
+# Foundry
+out/
+cache/
+broadcast/
+# keep deployment artifacts you want to track? remove the line below if so.
+broadcast/**/dry-run/
+
+# Dependencies
+lib/
+node_modules/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.key
+keystore/
+
+# Coverage
+lcov.info
+coverage/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
