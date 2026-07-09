@@ -1,22 +1,39 @@
-name: slither
+name: Slither
 
+# Static analysis — the third required check named in docs/VERSION_CONTROL.md.
+# Uses the repo-root slither.config.json, so CI and local `slither .` agree.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+concurrency:
+  group: slither-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  analyze:
+  slither:
+    name: slither
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
         with:
+          # Slither compiles through Foundry, which needs the lib/ submodules.
           submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-      - name: Build (populate out/)
-        run: forge build --build-info
-      - name: Slither
-        uses: crytic/slither-action@v0.4.0
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.1
         with:
-          fail-on: none
-          slither-args: --filter-paths "lib/|test/"
+          # Foundry is auto-detected; crytic-compile reads foundry.toml for
+          # solc 0.8.24 + via-IR. slither.config.json (repo root) supplies
+          # remappings, path filters, and dependency exclusion.
+          slither-config: slither.config.json
+          # Fail the check on any finding not suppressed inline or filtered by
+          # config. Tighten to 'Low'/'Medium' only if the baseline proves noisy;
+          # per docs/STATIC-ANALYSIS.md the intent is a fully clean/justified run.
+          fail-on: all

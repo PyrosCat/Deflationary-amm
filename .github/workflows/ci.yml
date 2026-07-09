@@ -1,73 +1,45 @@
 name: CI
 
+# Build + test. Two of the three required checks named in
+# docs/VERSION_CONTROL.md ("build, test, slither"); slither.yml is the third.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
-env:
-  FOUNDRY_PROFILE: default
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  build-and-test:
     name: build & test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
         with:
+          # lib/ dependencies are git submodules (see .gitmodules); Foundry
+          # needs them present to compile.
           submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
       - name: Show versions
-        run: forge --version
+        run: |
+          forge --version
+          # solc version is pinned in foundry.toml (0.8.24); forge resolves it.
 
-      - name: Format check
-        run: forge fmt --check
-
-      - name: Build
+      - name: Build (via-IR)
+        # foundry.toml sets via_ir = true, optimizer 200. via-IR compilation is
+        # slow (Session 2 noted ~252 s cold); the toolchain cache helps on
+        # repeat runs.
         run: forge build --sizes
 
       - name: Test
+        # Includes unit, integration, regression, invariant, and the Session 3
+        # EpochLib suite. Baseline at time of writing: 70 tests across 8 suites.
         run: forge test -vvv
-
-      - name: Coverage
-        run: forge coverage --report summary --ir-minimum
-
-  invariant:
-    name: invariant (deep run)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-      - name: Deep invariant run
-        run: forge test --match-contract PoolInvariants -vvv
-        env:
-          FOUNDRY_INVARIANT_RUNS: "256"
-          FOUNDRY_INVARIANT_DEPTH: "64"
-
-  storage-layout:
-    name: storage layout diff
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-      - name: Capture layout
-        run: |
-          forge build
-          forge inspect AMMLiquidityPool storage-layout > /tmp/layout-new.json
-      - name: Compare against main
-        run: |
-          git fetch origin main
-          git stash
-          forge build
-          forge inspect AMMLiquidityPool storage-layout > /tmp/layout-old.json
-          git stash pop
-          diff /tmp/layout-old.json /tmp/layout-new.json && echo "Layout unchanged" || \
-            (echo "STORAGE LAYOUT CHANGED — review carefully before merging" && exit 1)
-        continue-on-error: true

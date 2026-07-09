@@ -160,6 +160,11 @@ contract AMMLiquidityPool is
 
     // ─── Liquidity ──────────────────────────────────────────────────────
 
+    // Balance-delta measurement (_pullMeasured) is the fee-on-transfer design:
+    // Slither's reentrancy-balance flags the balance reads around external
+    // transfers, but every external entry point is nonReentrant, so the
+    // "stale" values cannot be manipulated mid-flight. See STATIC-ANALYSIS sec 5.
+    // slither-disable-start reentrancy-balance
     /// @notice Add liquidity. Deposit at the CURRENT reserve ratio — the LP
     ///         amount is the min() across both sides (V2 semantics), so any
     ///         excess of one token is absorbed by the pool. Frontends should
@@ -190,6 +195,9 @@ contract AMMLiquidityPool is
             lpToken.mint(DEAD, MINIMUM_LIQUIDITY); // permanently locked
             liquidity = root - MINIMUM_LIQUIDITY;
         } else {
+            // Zero-reserve guard, not an attacker-influenced equality: exact
+            // == 0 is the intended check. See docs/STATIC-ANALYSIS.md sec 5.
+            // slither-disable-next-line incorrect-equality
             if (reserve0 == 0 || reserve1 == 0) revert InvalidReserves();
             // Stored reserves are the PRE-deposit snapshot: synced at the end
             // of the previous operation, before this deposit's transfers.
@@ -199,6 +207,8 @@ contract AMMLiquidityPool is
             );
         }
 
+        // Minted-amount zero-check; == 0 is intended, not a griefable equality.
+        // slither-disable-next-line incorrect-equality
         if (liquidity == 0) revert ZeroLiquidityMinted();
         if (liquidity < minLiquidityOut) revert SlippageExceeded(liquidity, minLiquidityOut);
 
@@ -210,7 +220,13 @@ contract AMMLiquidityPool is
 
         emit Deposit(msg.sender, liquidity, received0, received1, burn0, burn1);
     }
+    // slither-disable-end reentrancy-balance
 
+    // Guarded by nonReentrant (ReentrancyGuardUpgradeable): re-entry into any
+    // nonReentrant function is blocked, so the post-transfer _syncReserves()
+    // write cannot be exploited via cross-function reentrancy. Reserves are
+    // intentionally synced last (balance-delta accounting). See STATIC-ANALYSIS sec 5.
+    // slither-disable-start reentrancy-no-eth,reentrancy-benign
     /// @notice Remove liquidity. Deliberately NOT pausable — exits are always
     ///         available. The exit fee is not earmarked anywhere: it simply
     ///         stays in reserves, accruing to the remaining LPs (anti-churn).
@@ -226,12 +242,19 @@ contract AMMLiquidityPool is
 
         uint256 gross0 = (reserve0 * lpAmount) / supply;
         uint256 gross1 = (reserve1 * lpAmount) / supply;
+        // Zero-output guard; == 0 is intended.
+        // slither-disable-next-line incorrect-equality
         if (gross0 == 0 || gross1 == 0) revert ZeroOutput();
 
         // Burn shares before paying out.
         lpToken.burn(msg.sender, lpAmount);
 
+        // bps-of-bps: gross already divided by supply; multiplying by the small
+        // withdrawFeeBps then dividing by MAX_BPS does not lose precision at these
+        // magnitudes, and matches the pool's fixed-point convention. See sec 5.
+        // slither-disable-next-line divide-before-multiply
         uint256 fee0 = (gross0 * withdrawFeeBps) / MathUtils.MAX_BPS;
+        // slither-disable-next-line divide-before-multiply
         uint256 fee1 = (gross1 * withdrawFeeBps) / MathUtils.MAX_BPS;
         amount0Out = gross0 - fee0;
         amount1Out = gross1 - fee1;
@@ -245,6 +268,7 @@ contract AMMLiquidityPool is
 
         emit Withdraw(msg.sender, lpAmount, amount0Out, amount1Out);
     }
+    // slither-disable-end reentrancy-no-eth,reentrancy-benign
 
     // ─── Swaps ──────────────────────────────────────────────────────────
 
@@ -274,12 +298,18 @@ contract AMMLiquidityPool is
         uint256 amountInAfterFee = actualIn - feeAmount;
 
         amountOut = MathUtils.getAmountOut(amountInAfterFee, reserveIn, reserveOut);
+        // Output-sanity guard; == 0 is intended, not an attacker-set equality.
+        // slither-disable-next-line incorrect-equality
         if (amountOut == 0 || amountOut >= reserveOut) revert InvalidOutput();
         if (amountOut < minAmountOut) revert SlippageExceeded(amountOut, minAmountOut);
 
         // Three-way fee split. The LP cut is the remainder (absorbs rounding
         // dust) and is never earmarked — it stays in reserves as LP yield.
+        // bps-of-bps split of an already-divided feeAmount; ordering is intentional
+        // and precision-safe at these magnitudes. lpCut absorbs rounding dust. Sec 5.
+        // slither-disable-next-line divide-before-multiply
         uint256 burnCut = (feeAmount * swapFeeBurnShareBps) / MathUtils.MAX_BPS;
+        // slither-disable-next-line divide-before-multiply
         uint256 protocolCut = (feeAmount * swapFeeProtocolShareBps) / MathUtils.MAX_BPS;
         uint256 lpCut = feeAmount - burnCut - protocolCut;
 
@@ -341,13 +371,20 @@ contract AMMLiquidityPool is
 
     // ─── Internal ───────────────────────────────────────────────────────
 
+    // Balance-delta measurement for fee-on-transfer tokens: the before/after
+    // reads around the transfer are the intended semantics, and every caller
+    // holds nonReentrant. See STATIC-ANALYSIS sec 5.
+    // slither-disable-start reentrancy-balance
     /// @dev Pull `amount` from the caller and return what ACTUALLY arrived.
     function _pullMeasured(IERC20 token, uint256 amount) internal returns (uint256 received) {
         uint256 balBefore = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), amount);
         received = token.balanceOf(address(this)) - balBefore;
+        // Comparing the measured receipt to exactly 0 is intended.
+        // slither-disable-next-line incorrect-equality
         if (received == 0) revert NothingReceived();
     }
+    // slither-disable-end reentrancy-balance
 
     /// @dev Accumulate the oracle with the reserves that PREVAILED since the
     ///      last sync (i.e., BEFORE this sync overwrites them), then resync:
@@ -374,21 +411,29 @@ contract AMMLiquidityPool is
         uint256 r0 = reserve0;
         uint256 r1 = reserve1;
 
+        // timeElapsed derives from block.timestamp; a monotonic TWAP accumulator
+        // is unaffected by second-level validator drift. See sec 5.
+        // (start/end, not next-line: Slither attributes this to the whole
+        // multi-line comparison, which next-line does not cover.)
+        // slither-disable-start timestamp
         if (
             timeElapsed > 0 &&
             r0 > 0 && r1 > 0 &&
             r0 < MAX_ORACLE_RESERVE && r1 < MAX_ORACLE_RESERVE
         ) {
+            // slither-disable-end timestamp
             unchecked {
                 // Divide-before-multiply is DELIBERATE (Uniswap V2 UQ112 form):
                 // (r * Q112) / r' stays within 256 bits for reserves below
                 // MAX_ORACLE_RESERVE; multiplying by timeElapsed first would
                 // reintroduce the overflow this guard exists to prevent. The
                 // sub-Q112 precision loss is bounded and inherent to the format.
+                // slither-disable-start divide-before-multiply
                 // forge-lint: disable-next-line(divide-before-multiply)
                 price0CumulativeLast += ((r1 * Q112) / r0) * timeElapsed; // wraps by design
                 // forge-lint: disable-next-line(divide-before-multiply)
                 price1CumulativeLast += ((r0 * Q112) / r1) * timeElapsed; // wraps by design
+                // slither-disable-end divide-before-multiply
             }
         }
 

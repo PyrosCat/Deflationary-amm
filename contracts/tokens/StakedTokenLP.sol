@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IStakedTokenLP.sol";
 
 /// @notice LP share token for the AMM pool, with EIP-2612 permit for gasless
 ///         approvals (useful for future router/zap flows).
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 ///      After setMinter, ownership carries no dangerous powers and SHOULD be
 ///      renounced (plain Ownable is kept, rather than Ownable2Step, precisely
 ///      because renouncing is the intended end state).
-contract StakedTokenLP is ERC20, ERC20Permit, Ownable {
+contract StakedTokenLP is ERC20, ERC20Permit, Ownable, IStakedTokenLP {
     address public minter;
 
     event MinterSet(address indexed minter);
@@ -43,11 +44,11 @@ contract StakedTokenLP is ERC20, ERC20Permit, Ownable {
         emit MinterSet(_minter);
     }
 
-    function mint(address to, uint256 amount) external onlyMinter {
+    function mint(address to, uint256 amount) external override onlyMinter {
         _mint(to, amount);
     }
 
-    function burn(address from, uint256 amount) external onlyMinter {
+    function burn(address from, uint256 amount) external override onlyMinter {
         _burn(from, amount);
     }
 }

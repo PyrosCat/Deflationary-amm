@@ -6,11 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-interface IBurnController {
-    /// @notice Burn tax for a transfer. Must be cheap (O(1)) and revert-free;
-    ///         the token calls it with a gas cap and treats any failure as 0.
-    function getBurnAmount(address from, address to, uint256 amount) external view returns (uint256);
-}
+import "../interfaces/IBurnController.sol";
 
 /// @notice Fixed-supply deflationary ERC20 with a pluggable, hard-capped
 ///         transfer-burn policy. Supports EIP-2612 permit (gasless approvals)
@@ -111,9 +107,12 @@ contract DeflationaryToken is ERC20, ERC20Burnable, ERC20Permit, Ownable2Step {
     function executeControllerUpdate() external onlyOwner {
         PendingController memory p = pendingController;
         if (!p.exists) revert NoPendingUpdate();
-        // Second-level timestamp manipulation is immaterial against a 1-day timelock.
+        // Second-level timestamp manipulation is immaterial against a 1-day
+        // timelock. See docs/STATIC-ANALYSIS.md sec 5.
+        // slither-disable-start timestamp
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
+        // slither-disable-end timestamp
 
         burnController = IBurnController(p.newController);
         delete pendingController;

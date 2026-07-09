@@ -9,7 +9,54 @@ Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/VERSION_CONTROL.md](docs/V
 
 ## [Unreleased]
 
-_(nothing yet)_
+### Grace-window design (Session 3) — docs, library, tests, and archive only
+
+- `docs/DESIGN-GRACE-WINDOW.md`: resolves the Session 2 section-6a questions.
+  Grace window lives in the `IBurnController` implementation as a
+  parameterized schedule (`epochModulus`, `graceLengthSubunits`,
+  `graceBurnBps` behind the existing 1-day timelock, plus an `anchor`
+  constructor immutable); applies to the token transfer burn only. Launch
+  parameter values TBD.
+- `contracts/libraries/EpochLib.sol`: NEW internal library — 8-hour epochs,
+  48 ten-minute subunits, anchor-parameterized, half-open grace-window
+  predicates. VERIFIED against the recovered v5 `EpochUtils.sol`: 8-hour
+  constant confirmed (v5's "12-hour" comment is wrong); v5's constructor
+  `epochStart` adopted as the `anchor` parameter (0 = unix anchoring);
+  v5's pre-anchor clamp kept on the raw getters, with pre-anchor time
+  defined as never graced.
+- `archive/v5/EpochUtils.sol`: NEW — the recovered v5 file, verbatim, for
+  provenance (not compiled; see `archive/v5/README.md`).
+- `test/EpochLib.t.sol`: NEW unit + fuzz suite (boundary-second tests,
+  anchor/pre-anchor tests, v5-parity clamp test, v5-cadence reproduction,
+  monotonicity and lands-in-window fuzz properties). Passing — full suite
+  is 70 tests across 8 suites, 0 failures.
+- `test/GraceController.CHECKLIST.md`: NEW integration test checklist for
+  the future grace controller.
+- `SESSION_HANDOFF.md`: NEW at repo root — Session 2 handoff with section 6a
+  marked resolved and a Session 3 file table added.
+- `docs/STATIC-ANALYSIS.md` + `slither.config.json`: NEW — Slither tooling
+  and a first-timer's guide written for Windows/WSL2 (WSL2 + Foundry +
+  Slither setup, run, triage table mapping expected findings to
+  justifications, inline-suppression house style). Slither not yet run;
+  config and CI exist so the first run is reproducible.
+- `.github/workflows/ci.yml` + `.github/workflows/slither.yml`: NEW — the
+  `build`, `test`, and `slither` CI checks named in `docs/VERSION_CONTROL.md`
+  (the `.github/workflows/` directory did not previously exist).
+- Slither first run + triage (35 findings, zero genuine vulnerabilities):
+  inline suppressions with written justifications across AMMLiquidityPool,
+  FeeManager, FeeController, DeflationaryToken; missing-inheritance fixed
+  (`FlatRateBurnController is IBurnController`, `StakedTokenLP is
+  IStakedTokenLP` with `IStakedTokenLP is IERC20`); `IBurnController`
+  extracted to `contracts/interfaces/IBurnController.sol`. Suppression
+  adjacency rule documented after five forge-lint warnings re-fired
+  (directives must sit immediately above their code line).
+- Slither now runs clean: 35 findings → 0. naming-convention (7, all
+  idiomatic: `_param`/`__gap`/`INITIAL_SUPPLY`) excluded wholesale in
+  `slither.config.json` with rationale documented in STATIC-ANALYSIS.md;
+  the oracle timestamp guard uses a start/end block (multi-line comparison
+  isn't covered by disable-next-line).
+- Storage layout, function logic, and ABI are unchanged by the triage —
+  comments, inheritance declarations, and an interface relocation only.
 
 ---
 

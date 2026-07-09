@@ -27,6 +27,8 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
     event ProtocolFeesWithdrawn(address indexed to, uint256 amount0, uint256 amount1);
     event BurnExecuted(address indexed token, uint256 amount, bool trueBurn);
 
+    // CEI: feeToken0/1 zeroed before transfers; the trailing event is benign. Sec 5.
+    // slither-disable-start reentrancy-events
     function withdrawProtocolFees(address to) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
 
@@ -42,11 +44,14 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
         _syncReserves();
         emit ProtocolFeesWithdrawn(to, f0, f1);
     }
+    // slither-disable-end reentrancy-events
 
     /// @notice Destroy all earmarked burn balances. Callable by anyone.
     function burnAccumulated() external {
         uint256 b0 = burnToken0;
         uint256 b1 = burnToken1;
+        // Nothing-to-burn guard; == 0 is intended. See docs/STATIC-ANALYSIS.md sec 5.
+        // slither-disable-next-line incorrect-equality
         if (b0 == 0 && b1 == 0) revert NothingToBurn();
         // Effects before interactions.
         burnToken0 = 0;
@@ -62,10 +67,20 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
     ///      our balance by exactly `amount` (guards against tokens whose
     ///      fallback swallows unknown calls). Otherwise park at the dead
     ///      address, which works for every ERC20.
+    // slither-disable-start reentrancy-events
+    // Events emitted after external calls are benign (no state depends on them);
+    // effects precede interactions in the callers. See sec 5.
     function _burnOrDead(IERC20 token, uint256 amount) internal {
         uint256 balBefore = token.balanceOf(address(this));
+        // Deliberate fail-open burn: probe the token's burn() and fall back to
+        // the dead address if it reverts/no-ops. A low-level call is required to
+        // catch tokens whose fallback swallows unknown selectors. See sec 5.
+        // slither-disable-next-line low-level-calls
         (bool ok, ) = address(token).call(abi.encodeCall(IERC20Burnable.burn, (amount)));
 
+        // Exact balance-delta verification is the whole point: confirm the burn
+        // reduced our balance by precisely `amount` before trusting it. See sec 5.
+        // slither-disable-next-line incorrect-equality
         if (ok && token.balanceOf(address(this)) == balBefore - amount) {
             emit BurnExecuted(address(token), amount, true);
         } else {
@@ -73,4 +88,5 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
             emit BurnExecuted(address(token), amount, false);
         }
     }
+    // slither-disable-end reentrancy-events
 }

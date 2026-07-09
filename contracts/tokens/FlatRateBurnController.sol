@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IBurnController.sol";
 
 /// @notice Reference IBurnController: flat burn rate with an exemption list.
 ///         Exempt the AMM pool if you don't want tax stacking on top of the
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 ///      used by the token and pool (deliberately deferred: the controller is
 ///      swappable behind the token's 1-day timelock, so a hardened v2 can
 ///      replace it at any time).
-contract FlatRateBurnController is Ownable {
+contract FlatRateBurnController is Ownable, IBurnController {
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_RATE_BPS = 1_000; // mirrors the token's ceiling
 
@@ -43,7 +44,7 @@ contract FlatRateBurnController is Ownable {
     }
 
     /// @notice O(1), revert-free, as the token's gas-capped hook requires.
-    function getBurnAmount(address from, address to, uint256 amount) external view returns (uint256) {
+    function getBurnAmount(address from, address to, uint256 amount) external view override returns (uint256) {
         if (exempt[from] || exempt[to]) return 0;
         return (amount * burnRateBps) / BPS;
     }
