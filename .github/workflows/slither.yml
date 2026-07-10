@@ -25,14 +25,19 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+          
+      - name: Build (populate build-info)
+        run: forge build --build-info
 
       - name: Run Slither
-        uses: crytic/slither-action@v0.4.1
+        uses: crytic/slither-action@v0.4.2
         with:
           # Foundry is auto-detected; crytic-compile reads foundry.toml for
           # solc 0.8.24 + via-IR. slither.config.json (repo root) supplies
           # remappings, path filters, and dependency exclusion.
           slither-config: slither.config.json
+          solc-version: "0.8.24"
+          slither-version: "0.11.5"      
           # Fail the check on any finding not suppressed inline or filtered by
           # config. Tighten to 'Low'/'Medium' only if the baseline proves noisy;
           # per docs/STATIC-ANALYSIS.md the intent is a fully clean/justified run.
