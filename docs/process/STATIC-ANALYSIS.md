@@ -311,7 +311,7 @@ on 0.11.4 and local on 0.11.5, CI reported 3 findings local runs could not
 reproduce — an upstream 0.11.4 defect emitted findings with no source
 mapping, so `filter_paths` had nothing to match (fixed upstream in 0.11.5,
 PR #2918). The config was never at fault. Full account:
-`docs/incidents/2026-07-10-ci-submodules-and-slither.md`.
+`docs/incidents/2026-07-10-slither-ci.md`.
 
 Rules:
 

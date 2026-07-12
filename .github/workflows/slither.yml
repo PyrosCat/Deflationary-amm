@@ -5,8 +5,6 @@ name: Slither
 # pinned slither-analyzer; CI and local agree because both pin the same version
 # (docs/process/STATIC-ANALYSIS.md section 7).
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
