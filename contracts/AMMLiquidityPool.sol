@@ -196,7 +196,7 @@ contract AMMLiquidityPool is
             liquidity = root - MINIMUM_LIQUIDITY;
         } else {
             // Zero-reserve guard, not an attacker-influenced equality: exact
-            // == 0 is the intended check. See docs/STATIC-ANALYSIS.md sec 5.
+            // == 0 is the intended check. See docs/process/STATIC-ANALYSIS.md sec 5.
             // slither-disable-next-line incorrect-equality
             if (reserve0 == 0 || reserve1 == 0) revert InvalidReserves();
             // Stored reserves are the PRE-deposit snapshot: synced at the end

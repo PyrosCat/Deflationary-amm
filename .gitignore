@@ -26,5 +26,3 @@ coverage/
 .idea/
 *.swp
 
-#Files
-SESSION_HANDOFF.md

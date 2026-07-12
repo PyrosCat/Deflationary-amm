@@ -11,7 +11,7 @@ import "../libraries/EpochLib.sol";
 ///         subunits of every epoch whose number satisfies
 ///         `epoch % epochModulus == 0`, on the clock defined by the
 ///         immutable `anchor` (0 = unix anchoring: 00:00 / 08:00 / 16:00 UTC).
-///         Design record: docs/DESIGN-GRACE-WINDOW.md (normative section 4).
+///         Design record: docs/design/DESIGN-GRACE-WINDOW.md (normative section 4).
 ///
 /// @dev    Policy vs. clock, per the design doc:
 ///         - The four POLICY values (`baseBurnBps`, `graceBurnBps`,
@@ -138,7 +138,7 @@ contract GraceWindowBurnController is Ownable, IBurnController {
         PendingPolicy memory p = pendingPolicy;
         if (!p.exists) revert NoPendingUpdate();
         // Second-level timestamp manipulation is immaterial against a 1-day
-        // timelock. See docs/STATIC-ANALYSIS.md sec 5.
+        // timelock. See docs/process/STATIC-ANALYSIS.md sec 5.
         // slither-disable-start timestamp
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
@@ -188,7 +188,7 @@ contract GraceWindowBurnController is Ownable, IBurnController {
         // The window schedule has 10-minute granularity; second-level
         // validator timestamp manipulation is immaterial to it. Start/end
         // form: the call spans multiple lines (adjacency rule,
-        // docs/STATIC-ANALYSIS.md).
+        // docs/process/STATIC-ANALYSIS.md).
         // slither-disable-start timestamp
         return EpochLib.secondsUntilNextGrace(
             block.timestamp, anchor, epochModulus, graceLengthSubunits

@@ -2,7 +2,7 @@
 
 The controller does not exist yet, so these cannot ship as code. Write them
 alongside the implementation; every item maps to a normative statement in
-`docs/DESIGN-GRACE-WINDOW.md` section 4. The `EpochLib.t.sol` suite covers
+`docs/design/DESIGN-GRACE-WINDOW.md` section 4. The `EpochLib.t.sol` suite covers
 the pure math and is passing (full suite: 70 tests, 0 failures); this list
 covers everything that requires the
 controller and token wired together.

@@ -3,11 +3,49 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/).
 
-Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md) for the full policy.
+Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md) for the full policy.
 
 `v0.x` — pre-audit, pre-production. No stability guarantees on ABI or storage layout.
 
 ## [Unreleased]
+
+### Version control reform (Session 5)
+
+- `docs/process/VERSION_CONTROL.md`: rules rewritten around how the project
+  actually operates — direct-to-main trunk for the owner (external
+  contributions still branch + PR per `CONTRIBUTING.md`), branch-required
+  categories (Slither / CI / problem releases) with protection toggled on
+  for the duration and **Squash and Merge** everywhere, alpha tag cadence
+  (owner-judged increments within a minor version, minor bump = new
+  capability), one-liner tag and commit subjects with detail in the
+  CHANGELOG, release runbook rewritten for the no-branch default, exact CI
+  check names (`build & test`, `slither`), and new §9: documentation layout
+  and session records.
+- CHANGELOG repaired: `[v0.2.0-alpha.1]` section created (was missing —
+  the tag's GitHub release published with an empty body) and the absent
+  Session 4 content written in.
+- `.github/workflows/release.yml`: guard added — the release job now fails
+  with a pointed error when the tag has no matching non-empty CHANGELOG
+  section, instead of publishing a blank release.
+- `docs/` reorganized into `design/`, `process/`, `incidents/`,
+  `frontend/`, `sessions/`; every live cross-reference updated (workflow
+  comments, README, CONTRIBUTING, contract comments, deployment README;
+  CHANGELOG history left as written). Stale README banner replaced with the
+  actual v0.2.0-alpha.1 state.
+- Session records policy adopted: `docs/sessions/WORK_SESSION_N.md`,
+  committed each session, never overwritten. Sessions 3 and 4 recovered;
+  the gitignored root `SESSION_HANDOFF.md` convention retired.
+- `docs/incidents/2026-07-10-ci-submodules-and-slither.md`: NEW — full
+  account of both Session 4 CI failures (missing submodule gitlinks;
+  slither-analyzer 0.11.4 source-mapping defect). Version-pin rules
+  recorded in `docs/process/STATIC-ANALYSIS.md` §7, including the pinned
+  local install (`slither-analyzer==0.11.5`).
+
+## [v0.2.0-alpha.1] — 2026-07-10
+
+Grace-window capability complete and verified: design doc, epoch library,
+GraceWindowBurnController, 98-test suite, Slither-clean CI pinned end to end.
+Pre-audit; do not deploy.
 
 ### Grace-window design (Session 3) — docs, library, tests, and archive only
 
@@ -58,6 +96,51 @@ Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/VERSION_CONTROL.md](docs/V
 - Storage layout, function logic, and ABI are unchanged by the triage —
   comments, inheritance declarations, and an interface relocation only.
 
+### GraceWindowBurnController (Session 4)
+
+- `contracts/tokens/GraceWindowBurnController.sol`: NEW — implements
+  `docs/DESIGN-GRACE-WINDOW.md` §4. `anchor` is a constructor immutable with
+  no setter (clock changes = controller swap behind the token's timelock).
+  Four policy values (`baseBurnBps`, `graceBurnBps`, `epochModulus`,
+  `graceLengthSubunits`) packed into one storage slot and changed only
+  atomically through a 1-day schedule/cancel/execute timelock — there is
+  deliberately no instant `setBurnRate` (the `graceBurnBps <= baseBurnBps`
+  coupling rules out independent setters). Guards: base ≤ 1000 bps,
+  grace ≤ base, modulus ≥ 1, `graceLengthSubunits` > 48 rejected (not
+  clamped — clamping hides owner typos). Instant `setExempt` retained for
+  FlatRate parity. View helpers: `currentBurnBps()`, `graceActive()`,
+  `secondsUntilNextGrace()`.
+- Fail-open verified: rate lookup succeeds at half the token's 100k gas cap
+  from cold storage, asserted in a test.
+- `test/GraceController.t.sol`: NEW — 28 tests mapping 1:1 to
+  `test/GraceController.CHECKLIST.md` (exact boundary seconds, modulus-3 and
+  v5-parity configs, constructor/setter guards, timelock paths, gas-cap fit,
+  swap-earmark and pool-exemption scope isolation, two-value and
+  supply-monotonicity fuzz). Full suite: **98 tests, 0 failures**; the four
+  pool fuzz invariants held at 2048 calls.
+- Zero contract changes across two test-fix rounds — all failures were
+  test-side (narrow-typed constants at a type boundary; rule recorded in
+  `docs/VERSION_CONTROL.md` house conventions and the session handoff).
+
+### CI hardening (Session 4)
+
+- Submodule gitlinks restored: `.gitignore`'s `lib/` entry had prevented the
+  three dependency gitlinks from ever reaching GitHub, so `actions/checkout`
+  had nothing to initialize and CI failed with ~40 parser errors. Each dep
+  was `git rm --cached`-ed and re-added via `git submodule add`; the pushed
+  tree now carries three mode-160000 gitlinks and CI checkout works.
+- Slither CI red resolved — root cause upstream: slither-analyzer 0.11.4
+  emitted `unindexed-event-address` findings with no source mapping, so
+  `filter_paths` could not match them (fixed upstream in 0.11.5, PR #2918).
+  Workflow now pins **slither-action v0.4.2 + slither-analyzer 0.11.5**
+  together (0.11.5 requires Python ≥ 3.10, which the v0.4.1 image lacked),
+  plus explicit `solc-version: "0.8.24"` and `slither-config`.
+  Result: `fail-on: all`, 0 findings, no detectors suppressed.
+- Verified during triage: every project-owned event already indexes its
+  address parameters; the detector stays active as a guard.
+- House rule recorded: local and CI Slither track the same pinned version —
+  the pin is the authority, not either environment.
+
 ---
 
 ## [v0.1.0-alpha.1] — 2026-07-05
@@ -107,4 +190,5 @@ Do not deploy to mainnet.
 - Professional audit
 - Ownership to multisig
 
+[v0.2.0-alpha.1]: https://github.com/PyrosCat/Deflationary-amm/releases/tag/v0.2.0-alpha.1
 [v0.1.0-alpha.1]: https://github.com/PyrosCat/Deflationary-amm/releases/tag/v0.1.0-alpha.1

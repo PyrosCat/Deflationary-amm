@@ -108,7 +108,7 @@ contract DeflationaryToken is ERC20, ERC20Burnable, ERC20Permit, Ownable2Step {
         PendingController memory p = pendingController;
         if (!p.exists) revert NoPendingUpdate();
         // Second-level timestamp manipulation is immaterial against a 1-day
-        // timelock. See docs/STATIC-ANALYSIS.md sec 5.
+        // timelock. See docs/process/STATIC-ANALYSIS.md sec 5.
         // slither-disable-start timestamp
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);

@@ -1,7 +1,7 @@
 # Static analysis (Slither) — Windows / WSL2 guide
 
-Slither is the project's static analyzer. It is one of the three required CI
-checks (`build`, `test`, `slither`) named in `docs/VERSION_CONTROL.md`, and
+Slither is the project's static analyzer. It is one of the two required CI
+checks (`build & test`, `slither`) named in `docs/process/VERSION_CONTROL.md`, and
 running it clean is a gate before any audit. This doc is written for a
 **Windows user who has never used Slither**, running it inside **WSL2**.
 
@@ -23,7 +23,7 @@ behavior on the inputs you thought of; Slither flags shapes of code that are
 *often* wrong regardless of inputs.
 
 It is **not** an audit. A clean Slither run is necessary, not sufficient.
-Every constraint in `SESSION_HANDOFF.md` section 4 still holds: the code is
+Every constraint in `docs/sessions/WORK_SESSION_4.md` section 4 still holds: the code is
 unaudited and pre-mainnet until a human audit completes.
 
 Expect false positives — a meaningful fraction of findings on any real
@@ -123,8 +123,8 @@ Slither needs Python 3.10+. Ubuntu's default python3 qualifies; check with
 sudo apt update && sudo apt install -y python3-pip pipx
 pipx ensurepath
 # open a new terminal (or: source ~/.bashrc) so pipx's bin dir is on PATH
-pipx install slither-analyzer
-slither --version
+pipx install slither-analyzer==0.11.5   # pinned — must match slither.yml
+slither --version                        # verify it prints 0.11.5
 ```
 
 (`uv tool install slither-analyzer` is an equally good alternative if you
@@ -231,7 +231,7 @@ above the code line.
 
 ```solidity
 // 10-minute subunit granularity; second-level timestamp drift cannot move a
-// grace-window boundary. See docs/STATIC-ANALYSIS.md section 5.
+// grace-window boundary. See docs/process/STATIC-ANALYSIS.md section 5.
 // slither-disable-next-line timestamp
 if (block.timestamp >= windowClose) {
 ```
@@ -297,10 +297,34 @@ the specific known-good names instead.
 ## 7. CI
 
 `.github/workflows/slither.yml` runs `slither .` on pushes and PRs to
-`main`, on Linux, with the same `slither.config.json` — so your WSL2 run and
-CI agree by construction. The workflow fails the check on any finding not
-suppressed inline or filtered by config — that is the "slither" required
-status check referenced in `docs/VERSION_CONTROL.md`.
+`main`, on Linux, with the same `slither.config.json`. The workflow fails
+the check on any finding not suppressed inline or filtered by config — that
+is the `slither` required status check referenced in
+`docs/process/VERSION_CONTROL.md`.
+
+### Version pinning — the pin is the authority
+
+Local WSL2 and CI agree only because **both are pinned to the same
+slither-analyzer version** (currently **0.11.5**). Neither environment is
+authoritative by default; the pin is. This was earned the hard way: with CI
+on 0.11.4 and local on 0.11.5, CI reported 3 findings local runs could not
+reproduce — an upstream 0.11.4 defect emitted findings with no source
+mapping, so `filter_paths` had nothing to match (fixed upstream in 0.11.5,
+PR #2918). The config was never at fault. Full account:
+`docs/incidents/2026-07-10-ci-submodules-and-slither.md`.
+
+Rules:
+
+- `slither.yml` pins `slither-version` and the local install pins the same
+  number (`pipx install slither-analyzer==<pin>`). Upgrading is a deliberate
+  commit that changes both, plus this document.
+- The analyzer pin must be installable in the Python shipped by the pinned
+  action image (0.11.5 needs Python ≥ 3.10, which forced slither-action
+  v0.4.1 → v0.4.2). Bumping the analyzer across a `Requires-Python`
+  boundary means bumping the action first. If dependabot ever covers
+  `github-actions`, record this coupling as a comment in `dependabot.yml`.
+- `slither.yml` also pins `solc-version` explicitly (the action guesses
+  otherwise — it had been guessing 0.8.20 against a 0.8.24 codebase).
 
 Triage locally in WSL2 first: a red Slither check on a PR should be rare,
 because you ran `slither .` and resolved or justified everything before
@@ -319,10 +343,10 @@ pushing.
       config (with the reason living here).
 - [ ] The three "take seriously" categories — reentrancy, access control,
       storage layout — are clean or have a written, reviewed rationale.
-- [ ] Update the status line in the header of this doc and the Slither row
-      in `SESSION_HANDOFF.md` section 2 from "not yet run" to the result.
+- [ ] Update the status line in the header of this doc and record the result
+      in the current session record (`docs/sessions/WORK_SESSION_N.md`).
 - [ ] Commit config + any inline suppressions on a `chore/ci-slither` branch
-      (the branch name `docs/VERSION_CONTROL.md` already anticipates).
+      (the branch name `docs/process/VERSION_CONTROL.md` already anticipates).
 
 ---
 

@@ -10,7 +10,7 @@ import {DeflationaryToken} from "../contracts/tokens/DeflationaryToken.sol";
 import {FlatRateBurnController} from "../contracts/tokens/FlatRateBurnController.sol";
 
 /// @notice Deploys the full system in the required order and wires it up.
-///         Encodes the runbook from docs/ARCHITECTURE.md section 4.
+///         Encodes the runbook from docs/design/ARCHITECTURE.md section 4.
 ///
 ///         The token launches with its tax controller DISABLED (address(0))
 ///         to avoid the chicken-and-egg where the controller wants addresses

@@ -30,6 +30,15 @@ jobs:
           echo "$BODY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Fail if CHANGELOG section is missing or empty
+        env:
+          BODY: ${{ steps.changelog.outputs.BODY }}
+        run: |
+          if [ -z "$(echo "$BODY" | tr -d '[:space:]')" ]; then
+            echo "::error file=CHANGELOG.md::No '## [${GITHUB_REF_NAME}]' section found (or it is empty). The GitHub Release body would be blank. Add the section, then re-cut the tag (docs/process/VERSION_CONTROL.md section 5 — a tag needing repair is a release-branch trigger)."
+            exit 1
+          fi
+
       - uses: foundry-rs/foundry-toolchain@v1
 
       - name: Build and verify

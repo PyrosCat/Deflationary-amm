@@ -2,7 +2,7 @@
 
 Audience: whoever designs and builds the web app for this protocol (designer, frontend dev, or future contributors).
 Scope: the EVM contract system in this repo (`amm-pool-v6`). See section 12 before making any chain-coupled architecture decisions.
-Companion doc: `docs/ARCHITECTURE.md` (contract architecture, deployment runbook, testing status).
+Companion doc: `docs/design/ARCHITECTURE.md` (contract architecture, deployment runbook, testing status).
 
 ---
 
@@ -159,7 +159,7 @@ Ember is reserved exclusively for destruction. If everything glows orange, nothi
 
 ## 10. Suggested stack
 
-Next.js (or Vite) + TypeScript, wagmi v2 + viem (typed hooks generated from Foundry artifacts), TanStack Query for cache with event-driven invalidation keyed on `ReservesSynced`, RainbowKit or ConnectKit for wallets, and a headless component layer (Radix or similar) styled to section 9. Local dev against Anvil with a seed script that deploys the runbook from docs/ARCHITECTURE.md section 4 and funds test accounts.
+Next.js (or Vite) + TypeScript, wagmi v2 + viem (typed hooks generated from Foundry artifacts), TanStack Query for cache with event-driven invalidation keyed on `ReservesSynced`, RainbowKit or ConnectKit for wallets, and a headless component layer (Radix or similar) styled to section 9. Local dev against Anvil with a seed script that deploys the runbook from docs/design/ARCHITECTURE.md section 4 and funds test accounts.
 
 ## 11. Definition of done, v1
 

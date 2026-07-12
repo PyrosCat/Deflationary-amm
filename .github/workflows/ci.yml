@@ -1,7 +1,7 @@
 name: CI
 
-# Build + test. Two of the three required checks named in
-# docs/VERSION_CONTROL.md ("build, test, slither"); slither.yml is the third.
+# Build + test. One of the two required checks ("build & test") named in
+# docs/process/VERSION_CONTROL.md; slither.yml is the other ("slither").
 on:
   push:
     branches: [main]
