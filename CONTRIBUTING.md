@@ -12,7 +12,7 @@ forge test
 
 ## Branching
 
-Branch from `main`, open a PR. Full branching model and merge strategy: [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md).
+Branch from `main`, open a PR. Full branching model and merge strategy: [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md).
 
 ```
 feat/*     new behavior
@@ -37,7 +37,7 @@ chore(ci): add slither workflow on push to main
 Types: `feat` `fix` `test` `docs` `refactor` `chore` `release` `security`
 Scopes: `pool` `token` `controller` `lp` `storage` `oracle` `fees` `deploy` `ci` `docs`
 
-Breaking changes: add `BREAKING CHANGE: <desc>` in the commit body, note it in the PR description and `CHANGELOG.md`, bump MAJOR version. See [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md) section 4.
+Breaking changes: add `BREAKING CHANGE: <desc>` in the commit body, note it in the PR description and `CHANGELOG.md`, bump MAJOR version. See [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md) section 4.
 
 ## Code conventions
 
@@ -67,4 +67,4 @@ slither . || true
 
 ## Versioning
 
-`vMAJOR.MINOR.PATCH` — see [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md) section 4 for the full policy and the release runbook.
+`vMAJOR.MINOR.PATCH` — see [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md) section 4 for the full policy and the release runbook.

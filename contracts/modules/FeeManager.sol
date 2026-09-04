@@ -50,7 +50,7 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
     function burnAccumulated() external {
         uint256 b0 = burnToken0;
         uint256 b1 = burnToken1;
-        // Nothing-to-burn guard; == 0 is intended. See docs/STATIC-ANALYSIS.md sec 5.
+        // Nothing-to-burn guard; == 0 is intended. See docs/process/STATIC-ANALYSIS.md sec 5.
         // slither-disable-next-line incorrect-equality
         if (b0 == 0 && b1 == 0) revert NothingToBurn();
         // Effects before interactions.

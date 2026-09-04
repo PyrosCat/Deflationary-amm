@@ -11,7 +11,7 @@ forge install OpenZeppelin/openzeppelin-contracts@v5.1.0
 forge install OpenZeppelin/openzeppelin-contracts-upgradeable@v5.1.0
 
 echo "==> first build"
-forge build || echo "Build reported issues — see docs/TESTING.md section 11 for triage."
+forge build || echo "Build reported issues — see docs/process/TESTING.md section 11 for triage."
 
 echo "==> initial commit"
 git add .

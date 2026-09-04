@@ -197,7 +197,7 @@ Status: items 1-4 COMPLETE (2026-07-03). Item 5 awaits a product decision.
 
 13. Move ownership of pool, token, and LP token to a multisig before any real value; a single EOA owner undermines every timelock in the system.
 14. Professional audit (core plus periphery together). This code is unaudited.
-15. Frontend build against the testnet deployment (see `docs/HANDOFF-FRONTEND.md`; tax-adjusted quoting and proportional deposit amounts are rules U1 and U2 there).
+15. Frontend build against the testnet deployment (see `docs/frontend/HANDOFF-FRONTEND.md`; tax-adjusted quoting and proportional deposit amounts are rules U1 and U2 there).
 
 ### Phase 5: later milestone
 

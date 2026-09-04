@@ -52,7 +52,7 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
         PendingFee memory p = pendingFees[uint8(feeType)];
         if (!p.exists) revert NoPendingUpdate();
         // Second-level timestamp manipulation is immaterial against a 1-day
-        // timelock. See docs/STATIC-ANALYSIS.md sec 5.
+        // timelock. See docs/process/STATIC-ANALYSIS.md sec 5.
         // slither-disable-start timestamp
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);
@@ -88,7 +88,7 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
         PendingSplit memory p = pendingSplit;
         if (!p.exists) revert NoPendingUpdate();
         // Second-level timestamp manipulation is immaterial against a 1-day
-        // timelock. See docs/STATIC-ANALYSIS.md sec 5.
+        // timelock. See docs/process/STATIC-ANALYSIS.md sec 5.
         // slither-disable-start timestamp
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < p.executeAfter) revert TimelockActive(p.executeAfter);

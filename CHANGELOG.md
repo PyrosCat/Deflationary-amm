@@ -3,60 +3,91 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/).
 
-Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md) for the full policy.
+Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md) for the full policy.
 
 `v0.x` — pre-audit, pre-production. No stability guarantees on ABI or storage layout.
 
 ## [Unreleased]
+### Version control reform
 
-### Grace-window design (Session 3) — docs, library, tests, and archive only
+- `docs/process/VERSION_CONTROL.md`: rules rewritten — direct-to-main trunk,
+  branch-required categories (Slither / CI / problem releases), alpha tag
+  cadence, one-liner subjects, release runbook, exact CI check names.
+- `docs/` reorganized into `design/`, `process/`, `incidents/`, `frontend/`,
+  `sessions/`; all cross-references updated.
+- `docs/sessions/WORK_SESSION_3.md`, `WORK_SESSION_4.md`: NEW — work session
+  records; session records policy adopted (`WORK_SESSION_N.md`, never
+  overwritten).
+- `docs/incidents/2026-07-10-slither-ci.md`: NEW — Slither CI resolution
+  report (slither-analyzer 0.11.4 source-mapping defect; version-pin
+  coupling).
+- `.github/workflows/release.yml`: guard added — release job fails when the
+  tag has no matching non-empty CHANGELOG section.
 
-- `docs/DESIGN-GRACE-WINDOW.md`: resolves the Session 2 section-6a questions.
-  Grace window lives in the `IBurnController` implementation as a
-  parameterized schedule (`epochModulus`, `graceLengthSubunits`,
-  `graceBurnBps` behind the existing 1-day timelock, plus an `anchor`
-  constructor immutable); applies to the token transfer burn only. Launch
-  parameter values TBD.
+## [v0.2.0-alpha.1] — 2026-07-10
+
+Grace-window capability complete and verified: design doc, epoch library,
+GraceWindowBurnController, 98-test suite, Slither-clean CI pinned end to end.
+Pre-audit; do not deploy.
+
+### Grace-window design
+
+- `docs/design/DESIGN-GRACE-WINDOW.md`: NEW — grace window lives in the
+  `IBurnController` implementation as a parameterized schedule
+  (`epochModulus`, `graceLengthSubunits`, `graceBurnBps` behind the existing
+  1-day timelock, plus an `anchor` constructor immutable); applies to the
+  token transfer burn only. Launch parameter values TBD.
 - `contracts/libraries/EpochLib.sol`: NEW internal library — 8-hour epochs,
   48 ten-minute subunits, anchor-parameterized, half-open grace-window
-  predicates. VERIFIED against the recovered v5 `EpochUtils.sol`: 8-hour
-  constant confirmed (v5's "12-hour" comment is wrong); v5's constructor
-  `epochStart` adopted as the `anchor` parameter (0 = unix anchoring);
-  v5's pre-anchor clamp kept on the raw getters, with pre-anchor time
-  defined as never graced.
-- `archive/v5/EpochUtils.sol`: NEW — the recovered v5 file, verbatim, for
+  predicates. 8-hour constant confirmed; pre-anchor time is defined as never
+  graced.
+- `archive/v5/EpochUtils.sol`: NEW — recovered v5 file, verbatim, for
   provenance (not compiled; see `archive/v5/README.md`).
 - `test/EpochLib.t.sol`: NEW unit + fuzz suite (boundary-second tests,
-  anchor/pre-anchor tests, v5-parity clamp test, v5-cadence reproduction,
-  monotonicity and lands-in-window fuzz properties). Passing — full suite
-  is 70 tests across 8 suites, 0 failures.
+  anchor/pre-anchor, v5-parity clamp, monotonicity and lands-in-window fuzz).
+  70 tests across 8 suites, 0 failures.
 - `test/GraceController.CHECKLIST.md`: NEW integration test checklist for
-  the future grace controller.
-- `SESSION_HANDOFF.md`: NEW at repo root — Session 2 handoff with section 6a
-  marked resolved and a Session 3 file table added.
-- `docs/STATIC-ANALYSIS.md` + `slither.config.json`: NEW — Slither tooling
-  and a first-timer's guide written for Windows/WSL2 (WSL2 + Foundry +
-  Slither setup, run, triage table mapping expected findings to
-  justifications, inline-suppression house style). Slither not yet run;
-  config and CI exist so the first run is reproducible.
-- `.github/workflows/ci.yml` + `.github/workflows/slither.yml`: NEW — the
-  `build`, `test`, and `slither` CI checks named in `docs/VERSION_CONTROL.md`
-  (the `.github/workflows/` directory did not previously exist).
-- Slither first run + triage (35 findings, zero genuine vulnerabilities):
-  inline suppressions with written justifications across AMMLiquidityPool,
+  the grace controller.
+- `docs/process/STATIC-ANALYSIS.md` + `slither.config.json`: NEW — Slither
+  tooling guide (WSL2 setup, run, triage table, inline-suppression house
+  style).
+- `.github/workflows/ci.yml` + `.github/workflows/slither.yml`: NEW — CI
+  checks (`build & test`, `slither`).
+- Slither first run + triage: 35 findings, zero genuine vulnerabilities.
+  Inline suppressions with written justifications across AMMLiquidityPool,
   FeeManager, FeeController, DeflationaryToken; missing-inheritance fixed
   (`FlatRateBurnController is IBurnController`, `StakedTokenLP is
-  IStakedTokenLP` with `IStakedTokenLP is IERC20`); `IBurnController`
-  extracted to `contracts/interfaces/IBurnController.sol`. Suppression
-  adjacency rule documented after five forge-lint warnings re-fired
-  (directives must sit immediately above their code line).
-- Slither now runs clean: 35 findings → 0. naming-convention (7, all
-  idiomatic: `_param`/`__gap`/`INITIAL_SUPPLY`) excluded wholesale in
-  `slither.config.json` with rationale documented in STATIC-ANALYSIS.md;
-  the oracle timestamp guard uses a start/end block (multi-line comparison
-  isn't covered by disable-next-line).
-- Storage layout, function logic, and ABI are unchanged by the triage —
-  comments, inheritance declarations, and an interface relocation only.
+  IStakedTokenLP`); `IBurnController` extracted to
+  `contracts/interfaces/IBurnController.sol`. naming-convention (7, all
+  idiomatic) excluded wholesale in `slither.config.json`. Slither clean:
+  35 findings → 0. Storage layout, function logic, and ABI unchanged.
+
+### GraceWindowBurnController
+
+- `contracts/tokens/GraceWindowBurnController.sol`: NEW — implements
+  `docs/design/DESIGN-GRACE-WINDOW.md` §4. `anchor` is a constructor
+  immutable with no setter. Four policy values (`baseBurnBps`,
+  `graceBurnBps`, `epochModulus`, `graceLengthSubunits`) packed into one
+  storage slot, changed only atomically through a 1-day timelock; no instant
+  `setBurnRate`. Guards: base ≤ 1000 bps, grace ≤ base, modulus ≥ 1,
+  `graceLengthSubunits` > 48 rejected. Instant `setExempt` retained.
+  View helpers: `currentBurnBps()`, `graceActive()`,
+  `secondsUntilNextGrace()`. Fail-open verified at half the 100k gas cap.
+- `test/GraceController.t.sol`: NEW — 28 tests (boundary seconds, modulus
+  configs, constructor/setter guards, timelock paths, gas-cap fit, scope
+  isolation, fuzz). Full suite: **98 tests, 0 failures**; four pool fuzz
+  invariants held at 2048 calls. Zero contract changes across two test-fix
+  rounds.
+
+### CI hardening
+
+- Submodule gitlinks restored: `actions/checkout` had nothing to follow
+  (three mode-160000 entries now present); CI checkout works.
+- Slither CI resolved: slither-analyzer 0.11.4 emitted findings with no
+  source mapping (fixed upstream in 0.11.5, PR #2918). Pinned
+  **slither-action v0.4.2 + slither-analyzer 0.11.5**; explicit
+  `solc-version: "0.8.24"` and `slither-config` added. Result: `fail-on:
+  all`, 0 findings, no detectors suppressed.
 
 ---
 
@@ -107,4 +138,5 @@ Do not deploy to mainnet.
 - Professional audit
 - Ownership to multisig
 
+[v0.2.0-alpha.1]: https://github.com/PyrosCat/Deflationary-amm/releases/tag/v0.2.0-alpha.1
 [v0.1.0-alpha.1]: https://github.com/PyrosCat/Deflationary-amm/releases/tag/v0.1.0-alpha.1

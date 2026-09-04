@@ -2,7 +2,7 @@
 
 A modular, upgradeable (UUPS) constant-product AMM built to safely host fee-on-transfer deflationary tokens, with a three-way swap fee split (LP yield / burn / protocol), a permissionless burn crank, and a TWAP price oracle. Ships with a fixed-supply deflationary ERC-20 whose burn policy is pluggable but hard-capped.
 
-> **v0.1.0-alpha.1** — pre-audit, pre-compile. Phase 0 complete (contract surface frozen). See [CHANGELOG](CHANGELOG.md). Unaudited.
+> **v0.2.0-alpha.1** — pre-audit. 98 tests green, fuzz invariants passing, Slither clean at `fail-on: all`. Grace-window capability complete. See [CHANGELOG](CHANGELOG.md). Unaudited — do not deploy.
 
 ## Highlights
 
@@ -49,7 +49,7 @@ The satisfying first check — prove the three known bugs stay dead:
 forge test --match-path test/Regression.t.sol -vvv
 ```
 
-Full testing guide (including a Hardhat-to-Foundry translation): [docs/TESTING.md](docs/TESTING.md).
+Full testing guide (including a Hardhat-to-Foundry translation): [docs/process/TESTING.md](docs/process/TESTING.md).
 
 ## Repository layout
 
@@ -63,16 +63,16 @@ docs/               Architecture, testing, and frontend-integration docs
 
 ## Documentation
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — full architecture, economic parameters, proxy design, roadmap, provenance
-- [docs/TESTING.md](docs/TESTING.md) — Foundry setup and the test suite, for Hardhat users
-- [docs/HANDOFF-FRONTEND.md](docs/HANDOFF-FRONTEND.md) — frontend integration and design handoff
+- [docs/design/ARCHITECTURE.md](docs/design/ARCHITECTURE.md) — full architecture, economic parameters, proxy design, roadmap, provenance
+- [docs/process/TESTING.md](docs/process/TESTING.md) — Foundry setup and the test suite, for Hardhat users
+- [docs/frontend/HANDOFF-FRONTEND.md](docs/frontend/HANDOFF-FRONTEND.md) — frontend integration and design handoff
 - [SECURITY.md](SECURITY.md) — security posture and disclosure
 - [CONTRIBUTING.md](CONTRIBUTING.md) — dev workflow and conventions
-- [docs/VERSION_CONTROL.md](docs/VERSION_CONTROL.md) — branching, versioning, release process
+- [docs/process/VERSION_CONTROL.md](docs/process/VERSION_CONTROL.md) — branching, versioning, release process
 
 ## Deployment
 
-The deploy scripts in `script/` encode the ordering the system requires (token → controller → LP token → pool proxy → one-shot `setMinter` → optional exemptions → timelocked controller activation). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) section 4 for the full runbook. Copy `.env.example` to `.env` first.
+The deploy scripts in `script/` encode the ordering the system requires (token → controller → LP token → pool proxy → one-shot `setMinter` → optional exemptions → timelocked controller activation). See [docs/design/ARCHITECTURE.md](docs/design/ARCHITECTURE.md) section 4 for the full runbook. Copy `.env.example` to `.env` first.
 
 ```bash
 forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
@@ -80,7 +80,7 @@ forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
 
 ## Roadmap
 
-Phase 0 (freeze the contract surface) is complete: permit, two-step ownership, custom errors, and the TWAP oracle are in. Current focus is Phase 1-2: compile, CI, and running the test suite. A Solana port is a later, separate milestone. Full roadmap in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) section 6.
+Phase 0 (freeze the contract surface) is complete: permit, two-step ownership, custom errors, and the TWAP oracle are in. Current focus is Phase 1-2: compile, CI, and running the test suite. A Solana port is a later, separate milestone. Full roadmap in [docs/design/ARCHITECTURE.md](docs/design/ARCHITECTURE.md) section 6.
 
 ## License
 

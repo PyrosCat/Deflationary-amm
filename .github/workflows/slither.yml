@@ -1,10 +1,10 @@
 name: Slither
 
-# Static analysis — the third required check named in docs/VERSION_CONTROL.md.
-# Uses the repo-root slither.config.json, so CI and local `slither .` agree.
+# Static analysis — the second required check (`slither`) named in
+# docs/process/VERSION_CONTROL.md. Uses the repo-root slither.config.json and a
+# pinned slither-analyzer; CI and local agree because both pin the same version
+# (docs/process/STATIC-ANALYSIS.md section 7).
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -40,5 +40,5 @@ jobs:
           slither-version: "0.11.5"      
           # Fail the check on any finding not suppressed inline or filtered by
           # config. Tighten to 'Low'/'Medium' only if the baseline proves noisy;
-          # per docs/STATIC-ANALYSIS.md the intent is a fully clean/justified run.
+          # per docs/process/STATIC-ANALYSIS.md the intent is a fully clean/justified run.
           fail-on: all
