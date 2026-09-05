@@ -84,10 +84,7 @@ contract RegressionTest is PoolTestBase {
             address(
                 new ERC1967Proxy(
                     address(new AMMLiquidityPool()),
-                    abi.encodeCall(
-                        AMMLiquidityPool.initialize,
-                        (address(mtk), address(other), address(lp2), owner)
-                    )
+                    abi.encodeCall(AMMLiquidityPool.initialize, (address(mtk), address(other), address(lp2), owner))
                 )
             )
         );

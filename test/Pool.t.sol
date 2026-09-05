@@ -46,9 +46,7 @@ contract PoolTest is PoolTestBase {
         uint256 expected = (net * supply) / pool.reserve0();
 
         vm.prank(bob);
-        vm.expectRevert(
-            abi.encodeWithSelector(AMMLiquidityPool.SlippageExceeded.selector, expected, expected + 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(AMMLiquidityPool.SlippageExceeded.selector, expected, expected + 1));
         pool.deposit(100e18, 100e18, expected + 1, block.timestamp + 1);
     }
 
@@ -156,9 +154,7 @@ contract PoolTest is PoolTestBase {
         uint256 expected = pool.quoteSwap(address(tokenA), 10e18);
 
         vm.prank(bob);
-        vm.expectRevert(
-            abi.encodeWithSelector(AMMLiquidityPool.SlippageExceeded.selector, expected, expected + 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(AMMLiquidityPool.SlippageExceeded.selector, expected, expected + 1));
         pool.swap(address(tokenA), 10e18, expected + 1, block.timestamp + 1);
     }
 

@@ -159,17 +159,13 @@ contract EpochLibTest is Test {
 
         // Just closed, modulus 1: wait until the next epoch start.
         assertEq(
-            EpochLib.secondsUntilNextGrace(3_600, 0, 1, 6),
-            EPOCH - 3_600,
-            "from exact close second to next epoch start"
+            EpochLib.secondsUntilNextGrace(3_600, 0, 1, 6), EPOCH - 3_600, "from exact close second to next epoch start"
         );
 
         // Modulus 3, full-epoch window, sitting at epoch 1 start: next
         // qualifying epoch is 3.
         assertEq(
-            EpochLib.secondsUntilNextGrace(ANCHOR + EPOCH, ANCHOR, 3, 48),
-            2 * EPOCH,
-            "epoch 1 start to epoch 3 start"
+            EpochLib.secondsUntilNextGrace(ANCHOR + EPOCH, ANCHOR, 3, 48), 2 * EPOCH, "epoch 1 start to epoch 3 start"
         );
 
         // Same schedule, mid-epoch-1.
@@ -181,9 +177,7 @@ contract EpochLibTest is Test {
 
         // Pre-anchor: counts down to the anchor, where the first window opens.
         assertEq(
-            EpochLib.secondsUntilNextGrace(ANCHOR - 500, ANCHOR, 1, 6),
-            500,
-            "pre-anchor counts down to the anchor"
+            EpochLib.secondsUntilNextGrace(ANCHOR - 500, ANCHOR, 1, 6), 500, "pre-anchor counts down to the anchor"
         );
     }
 
@@ -219,29 +213,21 @@ contract EpochLibTest is Test {
         if (len < 48) {
             assertFalse(EpochLib.graceActive(closeAt, anchor, 1, len), "inactive at exact close");
         } else {
-            assertTrue(
-                EpochLib.graceActive(closeAt, anchor, 1, len),
-                "len 48: close second is next epoch's open"
-            );
+            assertTrue(EpochLib.graceActive(closeAt, anchor, 1, len), "len 48: close second is next epoch's open");
         }
     }
 
     /// Warping forward by secondsUntilNextGrace always lands inside an
     /// active window (any anchor, modulus 1..10, length 1..48) — including
     /// from pre-anchor timestamps.
-    function testFuzz_SecondsUntilNextGrace_LandsInWindow(
-        uint64 timestamp,
-        uint64 anchor,
-        uint8 modSeed,
-        uint8 lenSeed
-    ) public pure {
+    function testFuzz_SecondsUntilNextGrace_LandsInWindow(uint64 timestamp, uint64 anchor, uint8 modSeed, uint8 lenSeed)
+        public
+        pure
+    {
         uint256 m = (uint256(modSeed) % 10) + 1; // 1..10
         uint256 len = (uint256(lenSeed) % 48) + 1; // 1..48
         uint256 wait = EpochLib.secondsUntilNextGrace(timestamp, anchor, m, len);
-        assertTrue(
-            EpochLib.graceActive(uint256(timestamp) + wait, anchor, m, len),
-            "did not land in an active window"
-        );
+        assertTrue(EpochLib.graceActive(uint256(timestamp) + wait, anchor, m, len), "did not land in an active window");
     }
 
     /// Pre-anchor timestamps are never graced, for any parameters.

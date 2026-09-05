@@ -91,10 +91,7 @@ contract PoolInvariantsTest is Test {
             address(
                 new ERC1967Proxy(
                     address(new AMMLiquidityPool()),
-                    abi.encodeCall(
-                        AMMLiquidityPool.initialize,
-                        (address(tokenA), address(tokenB), address(lp), owner)
-                    )
+                    abi.encodeCall(AMMLiquidityPool.initialize, (address(tokenA), address(tokenB), address(lp), owner))
                 )
             )
         );
@@ -106,14 +103,8 @@ contract PoolInvariantsTest is Test {
 
     /// reserves == balance − earmarks, always, for both tokens.
     function invariant_ReserveAccountingIdentity() public view {
-        assertEq(
-            pool.reserve0(),
-            tokenA.balanceOf(address(pool)) - pool.burnToken0() - pool.feeToken0()
-        );
-        assertEq(
-            pool.reserve1(),
-            tokenB.balanceOf(address(pool)) - pool.burnToken1() - pool.feeToken1()
-        );
+        assertEq(pool.reserve0(), tokenA.balanceOf(address(pool)) - pool.burnToken0() - pool.feeToken0());
+        assertEq(pool.reserve1(), tokenB.balanceOf(address(pool)) - pool.burnToken1() - pool.feeToken1());
     }
 
     /// Earmarked funds are always actually present.

@@ -19,9 +19,7 @@ contract GovernanceTest is PoolTestBase {
 
     function test_ScheduleAboveCap_RevertsWithData() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(FeeController.FeeAboveCap.selector, uint16(600), uint16(500))
-        );
+        vm.expectRevert(abi.encodeWithSelector(FeeController.FeeAboveCap.selector, uint16(600), uint16(500)));
         pool.scheduleFeeUpdate(LiquidityPoolStorage.FeeType.SwapFee, 600);
     }
 
@@ -79,9 +77,7 @@ contract GovernanceTest is PoolTestBase {
 
     function test_Governance_OnlyOwner() public {
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice)
-        );
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice));
         pool.scheduleFeeUpdate(LiquidityPoolStorage.FeeType.SwapFee, 200);
     }
 
@@ -122,9 +118,7 @@ contract GovernanceTest is PoolTestBase {
         pool.withdrawProtocolFees(address(0));
 
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice)
-        );
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice));
         pool.withdrawProtocolFees(alice);
     }
 
@@ -160,10 +154,7 @@ contract GovernanceTest is PoolTestBase {
             address(
                 new ERC1967Proxy(
                     address(new AMMLiquidityPool()),
-                    abi.encodeCall(
-                        AMMLiquidityPool.initialize,
-                        (address(mtk), address(other), address(lp2), owner)
-                    )
+                    abi.encodeCall(AMMLiquidityPool.initialize, (address(mtk), address(other), address(lp2), owner))
                 )
             )
         );

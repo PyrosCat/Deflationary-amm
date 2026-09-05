@@ -121,9 +121,7 @@ contract DeflationaryTokenTest is Test {
 
         t.scheduleControllerUpdate(address(c));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(DeflationaryToken.TimelockActive.selector, expectedUnlock)
-        );
+        vm.expectRevert(abi.encodeWithSelector(DeflationaryToken.TimelockActive.selector, expectedUnlock));
         t.executeControllerUpdate();
 
         vm.warp(expectedUnlock);
@@ -171,8 +169,7 @@ contract DeflationaryTokenTest is Test {
         uint256 deadline = block.timestamp + 1 days;
         bytes32 typehash =
             keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-        bytes32 structHash =
-            keccak256(abi.encode(typehash, user, bob, 60e18, t.nonces(user), deadline));
+        bytes32 structHash = keccak256(abi.encode(typehash, user, bob, 60e18, t.nonces(user), deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", t.DOMAIN_SEPARATOR(), structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
 
