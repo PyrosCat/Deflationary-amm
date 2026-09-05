@@ -129,9 +129,7 @@ contract DeflationaryToken is ERC20, ERC20Burnable, ERC20Permit, Ownable2Step {
         uint256 taxAmount = 0;
 
         if (from != address(0) && to != address(0) && address(burnController) != address(0)) {
-            try burnController.getBurnAmount{gas: CONTROLLER_CALL_GAS}(from, to, amount)
-                returns (uint256 t)
-            {
+            try burnController.getBurnAmount{gas: CONTROLLER_CALL_GAS}(from, to, amount) returns (uint256 t) {
                 taxAmount = t;
             } catch {
                 taxAmount = 0; // fail-open: a broken controller cannot freeze the token

@@ -30,9 +30,7 @@ contract ProxyTest is PoolTestBase {
     function test_Upgrade_OnlyOwner() public {
         PoolV2Mock v2 = new PoolV2Mock();
         vm.prank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice)
-        );
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, alice));
         pool.upgradeToAndCall(address(v2), "");
     }
 

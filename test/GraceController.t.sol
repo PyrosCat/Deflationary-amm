@@ -42,9 +42,7 @@ contract GraceControllerTest is Test {
     function setUp() public {
         // Mid-epoch, outside the window, well past the anchor.
         vm.warp(ANCHOR + 4 hours);
-        ctrl = new GraceWindowBurnController(
-            ANCHOR, uint16(BASE), uint16(GRACE), uint32(MODULUS), uint32(LEN)
-        );
+        ctrl = new GraceWindowBurnController(ANCHOR, uint16(BASE), uint16(GRACE), uint32(MODULUS), uint32(LEN));
         token = new DeflationaryToken("Deflationary", "DFL", SUPPLY, address(this), address(ctrl));
     }
 
@@ -77,9 +75,7 @@ contract GraceControllerTest is Test {
     }
 
     function test_Boundary_WindowCloseMinusOne_PaysGrace() public {
-        assertEq(
-            _burnOnTransferAt(ANCHOR + LEN * SUB - 1), (100e18 * GRACE) / BPS, "close-1 is graced"
-        );
+        assertEq(_burnOnTransferAt(ANCHOR + LEN * SUB - 1), (100e18 * GRACE) / BPS, "close-1 is graced");
     }
 
     /// Window-open boundary: the anchor second itself is graced (epoch 0
@@ -97,18 +93,14 @@ contract GraceControllerTest is Test {
     /// Later epochs' windows open at their own epoch start.
     function test_LaterEpoch_WindowOpensAtEpochStart() public {
         assertEq(_burnOnTransferAt(ANCHOR + 5 * EPOCH), (100e18 * GRACE) / BPS, "epoch 5 open second");
-        assertEq(
-            _burnOnTransferAt(ANCHOR + 5 * EPOCH + LEN * SUB),
-            (100e18 * BASE) / BPS,
-            "epoch 5 close second"
-        );
+        assertEq(_burnOnTransferAt(ANCHOR + 5 * EPOCH + LEN * SUB), (100e18 * BASE) / BPS, "epoch 5 close second");
     }
 
     /// Modulus > 1: only epochs with epoch % modulus == 0 get a window.
     function test_Modulus3_OnlyQualifyingEpochsGraced() public {
-        GraceWindowBurnController c3 = new GraceWindowBurnController(ANCHOR, uint16(BASE), uint16(GRACE), 3, uint32(LEN));
-        DeflationaryToken t3 =
-            new DeflationaryToken("D3", "D3", SUPPLY, address(this), address(c3));
+        GraceWindowBurnController c3 =
+            new GraceWindowBurnController(ANCHOR, uint16(BASE), uint16(GRACE), 3, uint32(LEN));
+        DeflationaryToken t3 = new DeflationaryToken("D3", "D3", SUPPLY, address(this), address(c3));
 
         uint256[2] memory graced = [uint256(0), 3]; // qualifying epochs
         uint256[2] memory ungraced = [uint256(1), 2];
@@ -131,8 +123,7 @@ contract GraceControllerTest is Test {
     /// v5 parity config (3 / 48 / 0): the whole qualifying epoch is burn-free.
     function test_V5ParityConfig_WholeEpochFree() public {
         GraceWindowBurnController v5 = new GraceWindowBurnController(ANCHOR, uint16(BASE), 0, 3, 48);
-        DeflationaryToken tv5 =
-            new DeflationaryToken("V5", "V5", SUPPLY, address(this), address(v5));
+        DeflationaryToken tv5 = new DeflationaryToken("V5", "V5", SUPPLY, address(this), address(v5));
 
         vm.warp(ANCHOR + EPOCH - 1); // last second of qualifying epoch 0
         uint256 before = tv5.totalSupply();
@@ -165,39 +156,28 @@ contract GraceControllerTest is Test {
         anchor_ = bound(anchor_, 0, 4_000_000_000);
         ts = bound(ts, 0, 8_000_000_000);
 
-        GraceWindowBurnController c =
-            new GraceWindowBurnController(anchor_, base_, grace_, modulus_, len_);
+        GraceWindowBurnController c = new GraceWindowBurnController(anchor_, base_, grace_, modulus_, len_);
         vm.warp(ts);
 
         uint256 bps = c.currentBurnBps();
         assertTrue(bps == base_ || bps == grace_, "rate is exactly base or grace");
         assertEq(bps, c.graceActive() ? grace_ : base_, "rate agrees with graceActive()");
-        assertEq(
-            c.getBurnAmount(alice, bob, 100e18), (100e18 * bps) / BPS, "burn amount uses that rate"
-        );
+        assertEq(c.getBurnAmount(alice, bob, 100e18), (100e18 * bps) / BPS, "burn amount uses that rate");
     }
 
     // ─── Parameter governance (timelocked, atomic) ───────────────────────
 
     function test_Constructor_Guards() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(GraceWindowBurnController.RateAboveCap.selector, 1_001, 1_000)
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.RateAboveCap.selector, 1_001, 1_000));
         new GraceWindowBurnController(0, 1_001, 0, 1, 6);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(GraceWindowBurnController.GraceAboveBase.selector, 201, 200)
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.GraceAboveBase.selector, 201, 200));
         new GraceWindowBurnController(0, 200, 201, 1, 6);
 
         vm.expectRevert(GraceWindowBurnController.ZeroModulus.selector);
         new GraceWindowBurnController(0, 200, 100, 0, 6);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                GraceWindowBurnController.GraceLengthAboveEpoch.selector, 49, 48
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.GraceLengthAboveEpoch.selector, 49, 48));
         new GraceWindowBurnController(0, 200, 100, 1, 49);
     }
 
@@ -207,25 +187,17 @@ contract GraceControllerTest is Test {
     }
 
     function test_Schedule_RejectsGraceAboveBase() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(GraceWindowBurnController.GraceAboveBase.selector, 201, 200)
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.GraceAboveBase.selector, 201, 200));
         ctrl.schedulePolicyUpdate(200, 201, uint32(MODULUS), uint32(LEN));
     }
 
     function test_Schedule_RejectsBaseAboveCap() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(GraceWindowBurnController.RateAboveCap.selector, 1_001, 1_000)
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.RateAboveCap.selector, 1_001, 1_000));
         ctrl.schedulePolicyUpdate(1_001, uint16(GRACE), uint32(MODULUS), uint32(LEN));
     }
 
     function test_Schedule_RejectsLengthAbove48() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                GraceWindowBurnController.GraceLengthAboveEpoch.selector, 49, 48
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.GraceLengthAboveEpoch.selector, 49, 48));
         ctrl.schedulePolicyUpdate(uint16(BASE), uint16(GRACE), uint32(MODULUS), 49);
     }
 
@@ -238,9 +210,7 @@ contract GraceControllerTest is Test {
     function test_Execute_BeforeDelay_Reverts() public {
         ctrl.schedulePolicyUpdate(100, 0, 3, 12);
         uint64 unlock = uint64(block.timestamp + ctrl.POLICY_UPDATE_DELAY());
-        vm.expectRevert(
-            abi.encodeWithSelector(GraceWindowBurnController.TimelockActive.selector, unlock)
-        );
+        vm.expectRevert(abi.encodeWithSelector(GraceWindowBurnController.TimelockActive.selector, unlock));
         ctrl.executePolicyUpdate();
     }
 
@@ -299,9 +269,8 @@ contract GraceControllerTest is Test {
     /// so a regression toward the ceiling fails loudly here first.
     function test_RateLookup_FitsWellInsideGasCap() public view {
         uint256 halfCap = 50_000; // token grants CONTROLLER_CALL_GAS = 100_000
-        (bool ok, bytes memory ret) = address(ctrl).staticcall{gas: halfCap}(
-            abi.encodeCall(ctrl.getBurnAmount, (alice, bob, 100e18))
-        );
+        (bool ok, bytes memory ret) =
+            address(ctrl).staticcall{gas: halfCap}(abi.encodeCall(ctrl.getBurnAmount, (alice, bob, 100e18)));
         assertTrue(ok, "lookup succeeds at half the token's gas cap");
         assertEq(abi.decode(ret, (uint256)), (100e18 * BASE) / BPS, "and returns the right amount");
     }
@@ -319,14 +288,9 @@ contract GraceControllerTest is Test {
 
     /// Deploy token+pool with the grace controller, pool exempted (deploy
     /// script order). Returns the pool and the paired mock.
-    function _deployPoolFixture()
-        internal
-        returns (AMMLiquidityPool pool, DeflationaryToken tkn, MockERC20 other)
-    {
+    function _deployPoolFixture() internal returns (AMMLiquidityPool pool, DeflationaryToken tkn, MockERC20 other) {
         GraceWindowBurnController c =
-            new GraceWindowBurnController(
-            ANCHOR, uint16(BASE), uint16(GRACE), uint32(MODULUS), uint32(LEN)
-        );
+            new GraceWindowBurnController(ANCHOR, uint16(BASE), uint16(GRACE), uint32(MODULUS), uint32(LEN));
         tkn = new DeflationaryToken("Defl", "DFL", SUPPLY, alice, address(c));
         other = new MockERC20("Other", "OTH");
         StakedTokenLP lp = new StakedTokenLP("LP", "LP");
@@ -336,8 +300,7 @@ contract GraceControllerTest is Test {
                 new ERC1967Proxy(
                     address(new AMMLiquidityPool()),
                     abi.encodeCall(
-                        AMMLiquidityPool.initialize,
-                        (address(tkn), address(other), address(lp), address(this))
+                        AMMLiquidityPool.initialize, (address(tkn), address(other), address(lp), address(this))
                     )
                 )
             )
@@ -379,8 +342,7 @@ contract GraceControllerTest is Test {
     /// pool receives exactly the stated amount.
     function test_PoolExemption_HoldsInAndOutOfWindow() public {
         (AMMLiquidityPool pool, DeflationaryToken tkn,) = _deployPoolFixture();
-        uint256[2] memory times =
-            [ANCHOR + 20 * EPOCH + 10 minutes, ANCHOR + 20 * EPOCH + 4 hours];
+        uint256[2] memory times = [ANCHOR + 20 * EPOCH + 10 minutes, ANCHOR + 20 * EPOCH + 4 hours];
 
         for (uint256 i = 0; i < 2; i++) {
             vm.warp(times[i]);
@@ -389,9 +351,7 @@ contract GraceControllerTest is Test {
             vm.prank(alice);
             // forge-lint: disable-next-line(erc20-unchecked-transfer)
             tkn.transfer(address(pool), 100e18);
-            assertEq(
-                tkn.balanceOf(address(pool)) - poolBefore, 100e18, "pool receives full amount"
-            );
+            assertEq(tkn.balanceOf(address(pool)) - poolBefore, 100e18, "pool receives full amount");
             assertEq(tkn.totalSupply(), supplyBefore, "no transfer burn on pool-involved transfer");
         }
     }
@@ -419,9 +379,7 @@ contract GraceControllerTest is Test {
         vm.warp(epochStart + LEN * SUB);
         assertFalse(ctrl.graceActive(), "close: inactive");
         assertEq(ctrl.currentBurnBps(), BASE, "close: base rate");
-        assertEq(
-            ctrl.secondsUntilNextGrace(), EPOCH - LEN * SUB, "close: countdown to next epoch start"
-        );
+        assertEq(ctrl.secondsUntilNextGrace(), EPOCH - LEN * SUB, "close: countdown to next epoch start");
 
         // Cross-check the countdown against the library at an arbitrary point.
         vm.warp(epochStart + 5 hours);

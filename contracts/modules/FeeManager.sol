@@ -44,6 +44,7 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
         _syncReserves();
         emit ProtocolFeesWithdrawn(to, f0, f1);
     }
+
     // slither-disable-end reentrancy-events
 
     /// @notice Destroy all earmarked burn balances. Callable by anyone.
@@ -76,7 +77,7 @@ abstract contract FeeManager is LiquidityPoolStorage, OwnableUpgradeable {
         // the dead address if it reverts/no-ops. A low-level call is required to
         // catch tokens whose fallback swallows unknown selectors. See sec 5.
         // slither-disable-next-line low-level-calls
-        (bool ok, ) = address(token).call(abi.encodeCall(IERC20Burnable.burn, (amount)));
+        (bool ok,) = address(token).call(abi.encodeCall(IERC20Burnable.burn, (amount)));
 
         // Exact balance-delta verification is the whole point: confirm the burn
         // reduced our balance by precisely `amount` before trusting it. See sec 5.

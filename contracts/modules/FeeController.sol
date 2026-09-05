@@ -14,7 +14,7 @@ abstract contract FeeController is LiquidityPoolStorage, OwnableUpgradeable {
 
     uint16 public constant MAX_DEPOSIT_BURN_BPS = 200; // 2%
     uint16 public constant MAX_WITHDRAW_FEE_BPS = 200; // 2%
-    uint16 public constant MAX_SWAP_FEE_BPS = 500;     // 5%
+    uint16 public constant MAX_SWAP_FEE_BPS = 500; // 5%
     uint16 internal constant BPS_DENOMINATOR = 10_000;
 
     error FeeAboveCap(uint16 requested, uint16 cap);

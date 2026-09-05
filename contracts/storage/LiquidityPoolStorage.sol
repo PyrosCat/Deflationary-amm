@@ -22,16 +22,16 @@ abstract contract LiquidityPoolStorage {
     // ─── Earmarked balances (excluded from reserves) ───────────────────
     uint256 public burnToken0; // awaiting destruction via burnAccumulated()
     uint256 public burnToken1;
-    uint256 public feeToken0;  // protocol fees awaiting withdrawal
+    uint256 public feeToken0; // protocol fees awaiting withdrawal
     uint256 public feeToken1;
 
     // ─── Fee configuration (basis points) ──────────────────────────────
-    uint16 public depositBurnBps;  // taken from each deposit, earmarked to burn
-    uint16 public withdrawFeeBps;  // exit fee, stays in reserves for remaining LPs
-    uint16 public swapFeeBps;      // total swap fee, split three ways below
+    uint16 public depositBurnBps; // taken from each deposit, earmarked to burn
+    uint16 public withdrawFeeBps; // exit fee, stays in reserves for remaining LPs
+    uint16 public swapFeeBps; // total swap fee, split three ways below
 
-    uint16 public swapFeeLpShareBps;       // share of swap fee left in reserves (LP yield)
-    uint16 public swapFeeBurnShareBps;     // share earmarked for burning
+    uint16 public swapFeeLpShareBps; // share of swap fee left in reserves (LP yield)
+    uint16 public swapFeeBurnShareBps; // share earmarked for burning
     uint16 public swapFeeProtocolShareBps; // share earmarked for the protocol
 
     // ─── TWAP oracle accumulators (Uniswap V2 style) ────────────────────
@@ -43,7 +43,11 @@ abstract contract LiquidityPoolStorage {
     uint32 public blockTimestampLast;
 
     // ─── Timelocked fee governance ──────────────────────────────────────
-    enum FeeType { DepositBurn, WithdrawFee, SwapFee }
+    enum FeeType {
+        DepositBurn,
+        WithdrawFee,
+        SwapFee
+    }
 
     struct PendingFee {
         uint16 newBps;

@@ -84,16 +84,10 @@ contract GraceWindowBurnController is Ownable, IBurnController {
     error TimelockActive(uint64 executeAfter);
 
     event PolicyUpdateScheduled(
-        uint16 baseBurnBps,
-        uint16 graceBurnBps,
-        uint32 epochModulus,
-        uint32 graceLengthSubunits,
-        uint64 executeAfter
+        uint16 baseBurnBps, uint16 graceBurnBps, uint32 epochModulus, uint32 graceLengthSubunits, uint64 executeAfter
     );
     event PolicyUpdateCancelled();
-    event PolicyUpdated(
-        uint16 baseBurnBps, uint16 graceBurnBps, uint32 epochModulus, uint32 graceLengthSubunits
-    );
+    event PolicyUpdated(uint16 baseBurnBps, uint16 graceBurnBps, uint32 epochModulus, uint32 graceLengthSubunits);
     event ExemptionSet(address indexed account, bool isExempt);
 
     constructor(
@@ -120,12 +114,9 @@ contract GraceWindowBurnController is Ownable, IBurnController {
         // casting to 'uint64' is safe: block.timestamp + 1 day < 2**64 until year ~584e9
         // forge-lint: disable-next-line(unsafe-typecast)
         uint64 executeAfter = uint64(block.timestamp + POLICY_UPDATE_DELAY);
-        pendingPolicy = PendingPolicy(
-            baseBurnBps_, graceBurnBps_, epochModulus_, graceLengthSubunits_, executeAfter, true
-        );
-        emit PolicyUpdateScheduled(
-            baseBurnBps_, graceBurnBps_, epochModulus_, graceLengthSubunits_, executeAfter
-        );
+        pendingPolicy =
+            PendingPolicy(baseBurnBps_, graceBurnBps_, epochModulus_, graceLengthSubunits_, executeAfter, true);
+        emit PolicyUpdateScheduled(baseBurnBps_, graceBurnBps_, epochModulus_, graceLengthSubunits_, executeAfter);
     }
 
     function cancelPolicyUpdate() external onlyOwner {
@@ -158,12 +149,7 @@ contract GraceWindowBurnController is Ownable, IBurnController {
     /// @notice O(1), revert-free, as the token's gas-capped hook requires.
     ///         Returns exactly one of two rates for any timestamp:
     ///         `graceBurnBps` inside a window, `baseBurnBps` outside.
-    function getBurnAmount(address from, address to, uint256 amount)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getBurnAmount(address from, address to, uint256 amount) external view override returns (uint256) {
         if (exempt[from] || exempt[to]) return 0;
         return (amount * _currentBps()) / BPS;
     }
@@ -190,9 +176,7 @@ contract GraceWindowBurnController is Ownable, IBurnController {
         // form: the call spans multiple lines (adjacency rule,
         // docs/process/STATIC-ANALYSIS.md).
         // slither-disable-start timestamp
-        return EpochLib.secondsUntilNextGrace(
-            block.timestamp, anchor, epochModulus, graceLengthSubunits
-        );
+        return EpochLib.secondsUntilNextGrace(block.timestamp, anchor, epochModulus, graceLengthSubunits);
         // slither-disable-end timestamp
     }
 

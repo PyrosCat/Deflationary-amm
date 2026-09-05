@@ -75,12 +75,11 @@ library EpochLib {
     ///         `epochModulus` MUST be >= 1. This library does not guard the
     ///         zero case (it panics by division); the guard belongs in the
     ///         consuming controller's parameter setter.
-    function graceActive(
-        uint256 timestamp,
-        uint256 anchor,
-        uint256 epochModulus,
-        uint256 graceLengthSubunits
-    ) internal pure returns (bool) {
+    function graceActive(uint256 timestamp, uint256 anchor, uint256 epochModulus, uint256 graceLengthSubunits)
+        internal
+        pure
+        returns (bool)
+    {
         if (timestamp < anchor) {
             return false;
         }
@@ -99,12 +98,11 @@ library EpochLib {
     ///         value is the time until the next qualifying epoch boundary,
     ///         at which no window will actually open — callers should treat
     ///         the result as meaningless when the feature is disabled.
-    function secondsUntilNextGrace(
-        uint256 timestamp,
-        uint256 anchor,
-        uint256 epochModulus,
-        uint256 graceLengthSubunits
-    ) internal pure returns (uint256) {
+    function secondsUntilNextGrace(uint256 timestamp, uint256 anchor, uint256 epochModulus, uint256 graceLengthSubunits)
+        internal
+        pure
+        returns (uint256)
+    {
         if (graceActive(timestamp, anchor, epochModulus, graceLengthSubunits)) {
             return 0;
         }

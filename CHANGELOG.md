@@ -24,6 +24,11 @@ Versions follow `vMAJOR.MINOR.PATCH[-pre]`. See [docs/process/VERSION_CONTROL.md
 - `.github/workflows/release.yml`: guard added — release job fails when the
   tag has no matching non-empty CHANGELOG section.
 
+### Code style
+
+- `forge fmt` applied across `contracts/`, `test/`, and `script/` (20 files);
+  formatting-only, no logic change. Repo now passes `forge fmt --check`.
+
 ## [v0.2.0-alpha.1] — 2026-07-10
 
 Grace-window capability complete and verified: design doc, epoch library,

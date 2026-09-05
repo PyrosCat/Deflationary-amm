@@ -13,8 +13,7 @@ library ERC20Utils {
 
     function safeTransfer(IERC20 token, address to, uint256 amount) internal {
         if (address(token).code.length == 0) revert NotAContract();
-        (bool success, bytes memory data) =
-            address(token).call(abi.encodeCall(IERC20.transfer, (to, amount)));
+        (bool success, bytes memory data) = address(token).call(abi.encodeCall(IERC20.transfer, (to, amount)));
         if (!success || !(data.length == 0 || abi.decode(data, (bool)))) {
             revert TransferFailed();
         }
@@ -22,8 +21,7 @@ library ERC20Utils {
 
     function safeTransferFrom(IERC20 token, address from, address to, uint256 amount) internal {
         if (address(token).code.length == 0) revert NotAContract();
-        (bool success, bytes memory data) =
-            address(token).call(abi.encodeCall(IERC20.transferFrom, (from, to, amount)));
+        (bool success, bytes memory data) = address(token).call(abi.encodeCall(IERC20.transferFrom, (from, to, amount)));
         if (!success || !(data.length == 0 || abi.decode(data, (bool)))) {
             revert TransferFromFailed();
         }

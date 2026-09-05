@@ -64,12 +64,7 @@ contract AMMLiquidityPool is
     error NothingReceived();
 
     event Deposit(
-        address indexed user,
-        uint256 liquidity,
-        uint256 received0,
-        uint256 received1,
-        uint256 burn0,
-        uint256 burn1
+        address indexed user, uint256 liquidity, uint256 received0, uint256 received1, uint256 burn0, uint256 burn1
     );
     event Withdraw(address indexed user, uint256 lpAmount, uint256 amount0Out, uint256 amount1Out);
     event Swapped(
@@ -97,12 +92,7 @@ contract AMMLiquidityPool is
         _disableInitializers();
     }
 
-    function initialize(
-        address _token0,
-        address _token1,
-        address _lpToken,
-        address _owner
-    ) external initializer {
+    function initialize(address _token0, address _token1, address _lpToken, address _owner) external initializer {
         if (_token0 == address(0) || _token1 == address(0) || _lpToken == address(0) || _owner == address(0)) {
             revert ZeroAddress();
         }
@@ -122,11 +112,11 @@ contract AMMLiquidityPool is
         lpToken = IStakedTokenLP(_lpToken);
 
         // Default fee schedule (all adjustable later via the FeeController timelock):
-        depositBurnBps = 10;             // 0.10% of each deposit earmarked to burn
-        withdrawFeeBps = 25;             // 0.25% exit fee — stays in reserves for remaining LPs
-        swapFeeBps = 100;                // 1.00% total swap fee, split as:
-        swapFeeLpShareBps = 5_000;       //   50% stays in reserves (LP yield)
-        swapFeeBurnShareBps = 3_000;     //   30% earmarked for burning
+        depositBurnBps = 10; // 0.10% of each deposit earmarked to burn
+        withdrawFeeBps = 25; // 0.25% exit fee — stays in reserves for remaining LPs
+        swapFeeBps = 100; // 1.00% total swap fee, split as:
+        swapFeeLpShareBps = 5_000; //   50% stays in reserves (LP yield)
+        swapFeeBurnShareBps = 3_000; //   30% earmarked for burning
         swapFeeProtocolShareBps = 2_000; //   20% earmarked for the protocol
 
         blockTimestampLast = uint32(block.timestamp);
@@ -169,12 +159,13 @@ contract AMMLiquidityPool is
     ///         amount is the min() across both sides (V2 semantics), so any
     ///         excess of one token is absorbed by the pool. Frontends should
     ///         quote proportional amounts from getReserves().
-    function deposit(
-        uint256 amount0,
-        uint256 amount1,
-        uint256 minLiquidityOut,
-        uint256 deadline
-    ) external nonReentrant whenNotPaused ensure(deadline) returns (uint256 liquidity) {
+    function deposit(uint256 amount0, uint256 amount1, uint256 minLiquidityOut, uint256 deadline)
+        external
+        nonReentrant
+        whenNotPaused
+        ensure(deadline)
+        returns (uint256 liquidity)
+    {
         if (amount0 == 0 || amount1 == 0) revert ZeroAmount();
 
         // Balance-delta measurement: what actually arrived, net of any
@@ -201,10 +192,7 @@ contract AMMLiquidityPool is
             if (reserve0 == 0 || reserve1 == 0) revert InvalidReserves();
             // Stored reserves are the PRE-deposit snapshot: synced at the end
             // of the previous operation, before this deposit's transfers.
-            liquidity = MathUtils.min(
-                (net0 * supply) / reserve0,
-                (net1 * supply) / reserve1
-            );
+            liquidity = MathUtils.min((net0 * supply) / reserve0, (net1 * supply) / reserve1);
         }
 
         // Minted-amount zero-check; == 0 is intended, not a griefable equality.
@@ -220,6 +208,7 @@ contract AMMLiquidityPool is
 
         emit Deposit(msg.sender, liquidity, received0, received1, burn0, burn1);
     }
+
     // slither-disable-end reentrancy-balance
 
     // Guarded by nonReentrant (ReentrancyGuardUpgradeable): re-entry into any
@@ -230,12 +219,12 @@ contract AMMLiquidityPool is
     /// @notice Remove liquidity. Deliberately NOT pausable — exits are always
     ///         available. The exit fee is not earmarked anywhere: it simply
     ///         stays in reserves, accruing to the remaining LPs (anti-churn).
-    function withdraw(
-        uint256 lpAmount,
-        uint256 minAmount0Out,
-        uint256 minAmount1Out,
-        uint256 deadline
-    ) external nonReentrant ensure(deadline) returns (uint256 amount0Out, uint256 amount1Out) {
+    function withdraw(uint256 lpAmount, uint256 minAmount0Out, uint256 minAmount1Out, uint256 deadline)
+        external
+        nonReentrant
+        ensure(deadline)
+        returns (uint256 amount0Out, uint256 amount1Out)
+    {
         if (lpAmount == 0) revert ZeroAmount();
         uint256 supply = lpToken.totalSupply();
         if (supply == 0) revert NoLiquidity();
@@ -268,6 +257,7 @@ contract AMMLiquidityPool is
 
         emit Withdraw(msg.sender, lpAmount, amount0Out, amount1Out);
     }
+
     // slither-disable-end reentrancy-no-eth,reentrancy-benign
 
     // ─── Swaps ──────────────────────────────────────────────────────────
@@ -276,20 +266,19 @@ contract AMMLiquidityPool is
     /// @dev Pricing uses STORED pre-trade reserves. Reading live balances
     ///      here would double-count the input, since it is transferred in
     ///      before pricing (the v5 bug).
-    function swap(
-        address fromToken,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        uint256 deadline
-    ) external nonReentrant whenNotPaused ensure(deadline) returns (uint256 amountOut) {
+    function swap(address fromToken, uint256 amountIn, uint256 minAmountOut, uint256 deadline)
+        external
+        nonReentrant
+        whenNotPaused
+        ensure(deadline)
+        returns (uint256 amountOut)
+    {
         bool zeroForOne = fromToken == address(token0);
         if (!zeroForOne && fromToken != address(token1)) revert InvalidToken();
         if (amountIn == 0) revert ZeroAmount();
 
-        (IERC20 inToken, IERC20 outToken) =
-            zeroForOne ? (token0, token1) : (token1, token0);
-        (uint256 reserveIn, uint256 reserveOut) =
-            zeroForOne ? (reserve0, reserve1) : (reserve1, reserve0);
+        (IERC20 inToken, IERC20 outToken) = zeroForOne ? (token0, token1) : (token1, token0);
+        (uint256 reserveIn, uint256 reserveOut) = zeroForOne ? (reserve0, reserve1) : (reserve1, reserve0);
         if (reserveIn == 0 || reserveOut == 0) revert NoLiquidity();
 
         uint256 actualIn = _pullMeasured(inToken, amountIn);
@@ -324,16 +313,7 @@ contract AMMLiquidityPool is
         outToken.safeTransfer(msg.sender, amountOut);
         _syncReserves();
 
-        emit Swapped(
-            msg.sender,
-            address(inToken),
-            actualIn,
-            address(outToken),
-            amountOut,
-            lpCut,
-            burnCut,
-            protocolCut
-        );
+        emit Swapped(msg.sender, address(inToken), actualIn, address(outToken), amountOut, lpCut, burnCut, protocolCut);
     }
 
     // ─── Views ──────────────────────────────────────────────────────────
@@ -348,8 +328,7 @@ contract AMMLiquidityPool is
     function quoteSwap(address fromToken, uint256 amountIn) external view returns (uint256 amountOut) {
         bool zeroForOne = fromToken == address(token0);
         if (!zeroForOne && fromToken != address(token1)) revert InvalidToken();
-        (uint256 reserveIn, uint256 reserveOut) =
-            zeroForOne ? (reserve0, reserve1) : (reserve1, reserve0);
+        (uint256 reserveIn, uint256 reserveOut) = zeroForOne ? (reserve0, reserve1) : (reserve1, reserve0);
         uint256 feeAmount = (amountIn * swapFeeBps) / MathUtils.MAX_BPS;
         amountOut = MathUtils.getAmountOut(amountIn - feeAmount, reserveIn, reserveOut);
     }
@@ -384,6 +363,7 @@ contract AMMLiquidityPool is
         // slither-disable-next-line incorrect-equality
         if (received == 0) revert NothingReceived();
     }
+
     // slither-disable-end reentrancy-balance
 
     /// @dev Accumulate the oracle with the reserves that PREVAILED since the
@@ -416,11 +396,7 @@ contract AMMLiquidityPool is
         // (start/end, not next-line: Slither attributes this to the whole
         // multi-line comparison, which next-line does not cover.)
         // slither-disable-start timestamp
-        if (
-            timeElapsed > 0 &&
-            r0 > 0 && r1 > 0 &&
-            r0 < MAX_ORACLE_RESERVE && r1 < MAX_ORACLE_RESERVE
-        ) {
+        if (timeElapsed > 0 && r0 > 0 && r1 > 0 && r0 < MAX_ORACLE_RESERVE && r1 < MAX_ORACLE_RESERVE) {
             // slither-disable-end timestamp
             unchecked {
                 // Divide-before-multiply is DELIBERATE (Uniswap V2 UQ112 form):

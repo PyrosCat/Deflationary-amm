@@ -34,11 +34,11 @@ library MathUtils {
     /// @param reserveOut PRE-TRADE reserve of the output token
     /// @dev Single-division form (Uniswap V2 style): rounds down, which
     ///      favors the pool, and avoids the double rounding of k/newReserveIn.
-    function getAmountOut(
-        uint256 amountInAfterFee,
-        uint256 reserveIn,
-        uint256 reserveOut
-    ) internal pure returns (uint256 amountOut) {
+    function getAmountOut(uint256 amountInAfterFee, uint256 reserveIn, uint256 reserveOut)
+        internal
+        pure
+        returns (uint256 amountOut)
+    {
         if (reserveIn == 0 || reserveOut == 0) revert InsufficientLiquidity();
         amountOut = (amountInAfterFee * reserveOut) / (reserveIn + amountInAfterFee);
     }

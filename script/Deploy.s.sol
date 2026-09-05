@@ -23,12 +23,7 @@ import {FlatRateBurnController} from "../contracts/tokens/FlatRateBurnController
 contract Deploy is Script {
     function run()
         external
-        returns (
-            DeflationaryToken token,
-            FlatRateBurnController controller,
-            StakedTokenLP lp,
-            AMMLiquidityPool pool
-        )
+        returns (DeflationaryToken token, FlatRateBurnController controller, StakedTokenLP lp, AMMLiquidityPool pool)
     {
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address owner = vm.envAddress("POOL_OWNER");
@@ -57,9 +52,7 @@ contract Deploy is Script {
         require(token1 != address(0) && token1 != address(token), "SET_POOL_TOKEN1_TO_A_REAL_PAIR");
 
         AMMLiquidityPool impl = new AMMLiquidityPool();
-        bytes memory init = abi.encodeCall(
-            AMMLiquidityPool.initialize, (address(token), token1, address(lp), owner)
-        );
+        bytes memory init = abi.encodeCall(AMMLiquidityPool.initialize, (address(token), token1, address(lp), owner));
         pool = AMMLiquidityPool(address(new ERC1967Proxy(address(impl), init)));
 
         // 6. One-shot: bind the LP minter to the POOL PROXY. Irreversible.

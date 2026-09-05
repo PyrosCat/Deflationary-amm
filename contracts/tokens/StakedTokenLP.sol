@@ -24,10 +24,11 @@ contract StakedTokenLP is ERC20, ERC20Permit, Ownable, IStakedTokenLP {
     error ZeroAddress();
     error NotAContract();
 
-    constructor(
-        string memory name_,
-        string memory symbol_
-    ) ERC20(name_, symbol_) ERC20Permit(name_) Ownable(msg.sender) {}
+    constructor(string memory name_, string memory symbol_)
+        ERC20(name_, symbol_)
+        ERC20Permit(name_)
+        Ownable(msg.sender)
+    {}
 
     modifier onlyMinter() {
         if (msg.sender != minter) revert NotMinter();

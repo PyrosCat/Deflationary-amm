@@ -38,7 +38,9 @@ contract RevertingController {
 contract GasBombController {
     function getBurnAmount(address, address, uint256) external pure returns (uint256 x) {
         while (true) {
-            unchecked { x++; }
+            unchecked {
+                x++;
+            }
         }
     }
 }
@@ -64,10 +66,8 @@ abstract contract PoolTestBase is Test {
         lp = new StakedTokenLP("Pool LP", "PLP");
 
         impl = new AMMLiquidityPool();
-        bytes memory init = abi.encodeCall(
-            AMMLiquidityPool.initialize,
-            (address(tokenA), address(tokenB), address(lp), owner)
-        );
+        bytes memory init =
+            abi.encodeCall(AMMLiquidityPool.initialize, (address(tokenA), address(tokenB), address(lp), owner));
         pool = AMMLiquidityPool(address(new ERC1967Proxy(address(impl), init)));
         lp.setMinter(address(pool));
 
@@ -109,12 +109,12 @@ abstract contract PoolTestBase is Test {
         uint256 value,
         uint256 deadline
     ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
-        bytes32 typehash =
-            keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 typehash = keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
         uint256 nonce = IERC20Permit(token).nonces(permitOwner);
         bytes32 structHash = keccak256(abi.encode(typehash, permitOwner, spender, value, nonce, deadline));
-        bytes32 digest =
-            keccak256(abi.encodePacked("\x19\x01", IERC20Permit(token).DOMAIN_SEPARATOR(), structHash));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", IERC20Permit(token).DOMAIN_SEPARATOR(), structHash));
         (v, r, s) = vm.sign(pk, digest);
     }
 }
